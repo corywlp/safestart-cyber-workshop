@@ -1417,29 +1417,32 @@ const emails = [
         from: 'dmv-compliance@dmv-state-portal.com',
         to: 'director@safestartdriving.org',
         date: 'March 21, 2026, 3:45 PM',
-        subject: 'URGENT: New Compliance Requirements for Driving Schools',
-        body: `Dear Valued Partner,
+        subject: '⚠️ FINAL NOTICE: 24 HOURS to Avoid Immediate Certification Suspension',
+        body: `Dear Driving Academy Administrator,
 
-We are reaching out to inform you about critical updates to our driving school certification requirements that must be completed immediately to maintain your organization's operational status.
+THIS IS YOUR FINAL NOTICE. Your academy's operating certification is scheduled for IMMEDIATE SUSPENSION in 24 HOURS if compliance verification is not completed.
 
-The Department of Motor Vehicles has recently implemented enhanced security protocols for all authorized driving instruction facilities. As part of these new requirements, we need you to verify your institution's current information and update your administrative credentials in our system.
+⏰ TIME REMAINING: 24:00:00 — DO NOT DELAY ⏰
 
-**Action Required:**
-Please click the link below to access the DMV Compliance Portal and complete the verification process within 24 hours to avoid any interruption to your certification status.
+Our records show you have not completed the mandatory security verification. Under new DMV directives effective March 20, 2026, ALL driving academies must re-verify their administrative credentials NOW or face:
 
-[VERIFY YOUR ACCOUNT NOW]
+  ⚠️  Certification suspended within 24 hours
+  ⚠️  Immediate removal from the authorized academy registry
+  ⚠️  All DMV road tests cancelled without refund
+  ⚠️  Fines of up to $5,000 for non-compliance
+  ⚠️  90-day mandatory re-application to restore status
+
+CLICK IMMEDIATELY — THIS LINK EXPIRES IN 24 HOURS:
+
+[VERIFY NOW — FINAL CHANCE]
 https://dmv-state-portal.com/verify-credentials
 
-This verification process is mandatory for all driving schools and must be completed by March 22, 2026. Failure to complete this process may result in temporary suspension of your ability to schedule DMV road tests for your students.
+After the 24-hour window closes, you will be removed from the registry automatically. There are NO EXCEPTIONS. There will be NO reminders. This is your only notice.
 
-If you have any questions or concerns regarding this matter, please do not hesitate to contact our support team at the email address provided above.
+Every minute you wait increases the risk to your academy's operations. Act NOW.
 
-Thank you for your prompt attention to this important matter.
-
-Best regards,
 DMV Compliance Division
-Department of Motor Vehicles
-State Certification Office`,
+Department of Motor Vehicles`,
         isPhishing: true,
         phishingType: 'Urgency Phishing',
         evidence: 'phishing-email',
@@ -1820,6 +1823,7 @@ const gameState = {
     auditWrongGuesses: 0,
     currentAuditRow: null,
     reflectionPoints: 0,
+    terminalPoints: 0,
     reflectionAnswered: 0,
     reflectionSubmitted: false
 };
@@ -2333,6 +2337,17 @@ function discoverEvidence(evidenceId) {
 
 }
 
+// Award +30 pts the first time a narratively-key log is opened in the terminal
+function awardTerminalLog(evidenceId) {
+    const isNew = !gameState.discoveredEvidence.has(evidenceId);
+    discoverEvidence(evidenceId);
+    if (isNew) {
+        gameState.score += 30;
+        gameState.terminalPoints += 30;
+        updateScore();
+    }
+}
+
 function updateScore() {
     const el = document.getElementById('current-score');
     if (el) el.textContent = gameState.score;
@@ -2720,12 +2735,12 @@ function executeCAT(file) {
         return `cat: ${file}: No such file or directory`;
     }
 
-    // Trigger evidence discovery for specific files
+    // Trigger evidence discovery for specific files (+15 pts for the two narratively-key logs)
     if (resolved === '/var/log/auth.log') {
-        discoverEvidence('foreign-ip');
+        awardTerminalLog('foreign-ip');
         return getAuthLog();
     } else if (resolved === '/var/log/syslog') {
-        discoverEvidence('ransomware-deployed');
+        awardTerminalLog('ransomware-deployed');
         return getSyslog();
     } else if (resolved === '/var/log/apache2/access.log') {
         discoverEvidence('credentials-compromised');
@@ -2859,17 +2874,18 @@ function isFile(path) {
 }
 
 function getAuthLog() {
-    return `Feb 15 10:14:02 safestart sudo: awong : TTY=pts/0 ; PWD=/home/awong ; USER=root ; COMMAND=/usr/sbin/usermod -aG domain_admins mgarcia
+    return `# GeoIP annotations enabled — each IP is tagged with its resolved location.
+Feb 15 10:14:02 safestart sudo: awong : TTY=pts/0 ; PWD=/home/awong ; USER=root ; COMMAND=/usr/sbin/usermod -aG domain_admins mgarcia
 Feb 15 10:14:02 safestart usermod[8821]: add 'mgarcia' to group 'domain_admins'
 Feb 15 10:14:03 safestart usermod[8821]: add 'mgarcia' to shadow group 'domain_admins'
-Mar 21 08:28:15 safestart sshd[1245]: Failed password for smartinez from 192.168.1.45
-Mar 21 08:28:22 safestart sshd[1246]: Failed password for smartinez from 192.168.1.45
+Mar 21 08:28:15 safestart sshd[1245]: Failed password for smartinez from 192.168.1.45 [Local Network — Safestart Office]
+Mar 21 08:28:22 safestart sshd[1246]: Failed password for smartinez from 192.168.1.45 [Local Network — Safestart Office]
 Mar 21 08:29:45 safestart sshd[1259]: Account smartinez locked due to 15 failed attempts
 Mar 21 08:31:18 safestart sudo: awong : TTY=pts/1 ; PWD=/home/awong ; USER=root ; COMMAND=/usr/sbin/faillock --user smartinez --reset
 Mar 21 08:31:19 safestart faillock[1258]: reset failure count for user smartinez
-Mar 21 08:31:52 safestart sshd[1260]: Accepted password for smartinez from 192.168.1.45
-Mar 21 15:52:14 safestart nginx[1398]: POST /login - user jwallace - credentials submitted from 192.168.1.55
-Mar 21 16:15:38 safestart sshd[1402]: Accepted password for jwallace from 185.220.101.47
+Mar 21 08:31:52 safestart sshd[1260]: Accepted password for smartinez from 192.168.1.45 [Local Network — Safestart Office]
+Mar 21 15:52:14 safestart nginx[1398]: POST /login - user jwallace - credentials submitted from 192.168.1.55 [Local Network — Safestart Office]
+Mar 21 16:15:38 safestart sshd[1402]: Accepted password for jwallace from 185.220.101.47 [Sofia, Bulgaria]
 Mar 21 16:15:38 safestart sshd[1402]: pam_unix(sshd:session): session opened for user jwallace
 Mar 21 16:15:45 safestart sudo: jwallace : TTY=pts/2 ; COMMAND=/bin/bash
 Mar 21 17:22:14 safestart sudo: jwallace : COMMAND=/usr/bin/id mgarcia
@@ -2880,8 +2896,8 @@ Mar 21 17:29:15 safestart sudo: jwallace : NOTE: User mgarcia discovered with Do
 Mar 21 17:30:28 safestart su[1523]: Successful su for mgarcia by root
 Mar 21 17:30:29 safestart sshd[1524]: pam_unix(sshd:session): session opened for user mgarcia
 Mar 21 17:35:42 safestart sudo: mgarcia : COMMAND=/bin/bash
-Mar 22 02:15:33 safestart sshd[1789]: Accepted password for mgarcia from 185.220.101.47
-Mar 23 23:45:12 safestart sshd[2103]: Accepted password for mgarcia from 185.220.101.47
+Mar 22 02:15:33 safestart sshd[1789]: Accepted password for mgarcia from 185.220.101.47 [Sofia, Bulgaria]
+Mar 23 23:45:12 safestart sshd[2103]: Accepted password for mgarcia from 185.220.101.47 [Sofia, Bulgaria]
 Mar 23 23:47:28 safestart sudo: mgarcia : COMMAND=/usr/bin/python3 /tmp/deploy.py`;
 }
 
@@ -2898,18 +2914,19 @@ Mar 24 08:00:03 safestart kernel: [CRITICAL] Mass file encryption detected on /h
 }
 
 function getAccessLog() {
-    return `185.220.101.47 - - [21/Mar/2026:16:18:44] "GET /admin/dashboard HTTP/1.1" 200
-185.220.101.47 - - [21/Mar/2026:16:19:22] "GET /admin/users HTTP/1.1" 200
-185.220.101.47 - - [21/Mar/2026:16:24:33] "POST /admin/export HTTP/1.1" 200
-185.220.101.47 - - [22/Mar/2026:02:18:55] "POST /api/upload HTTP/1.1" 201
-185.220.101.47 - - [22/Mar/2026:02:19:33] "GET /uploads/temp/update.sh HTTP/1.1" 200
-185.220.101.47 - - [23/Mar/2026:23:46:55] "POST /api/upload HTTP/1.1" 201
-185.220.101.47 - - [23/Mar/2026:23:47:12] "GET /uploads/deploy.py HTTP/1.1" 200`;
+    return `# GeoIP annotations enabled — each IP is tagged with its resolved location.
+185.220.101.47 [Sofia, Bulgaria] - - [21/Mar/2026:16:18:44] "GET /admin/dashboard HTTP/1.1" 200
+185.220.101.47 [Sofia, Bulgaria] - - [21/Mar/2026:16:19:22] "GET /admin/users HTTP/1.1" 200
+185.220.101.47 [Sofia, Bulgaria] - - [21/Mar/2026:16:24:33] "POST /admin/export HTTP/1.1" 200
+185.220.101.47 [Sofia, Bulgaria] - - [22/Mar/2026:02:18:55] "POST /api/upload HTTP/1.1" 201
+185.220.101.47 [Sofia, Bulgaria] - - [22/Mar/2026:02:19:33] "GET /uploads/temp/update.sh HTTP/1.1" 200
+185.220.101.47 [Sofia, Bulgaria] - - [23/Mar/2026:23:46:55] "POST /api/upload HTTP/1.1" 201
+185.220.101.47 [Sofia, Bulgaria] - - [23/Mar/2026:23:47:12] "GET /uploads/deploy.py HTTP/1.1" 200`;
 }
 
 function getErrorLog() {
     return `[Wed Mar 20 15:22:11 2026] [notice] Apache/2.4.41 (Ubuntu) configured -- resuming normal operations
-[Fri Mar 21 16:18:44 2026] [notice] Connection from 185.220.101.47
+[Fri Mar 21 16:18:44 2026] [notice] Connection from 185.220.101.47 [Sofia, Bulgaria]
 [Sat Mar 22 02:18:55 2026] [notice] File upload detected: /uploads/temp/update.sh
 [Sun Mar 23 23:46:55 2026] [notice] File upload detected: /uploads/deploy.py
 [Sun Mar 23 23:47:30 2026] [error] Suspicious activity detected - multiple uploads from same IP`;
@@ -3875,10 +3892,10 @@ function showResults() {
     // Compute rank early so we can use it in status messaging too
     const scoreForRank = gameState.score;
     let earlyRank;
-    if (scoreForRank >= 370)      earlyRank = 'Master Investigator';
-    else if (scoreForRank >= 310) earlyRank = 'Senior Analyst';
-    else if (scoreForRank >= 245) earlyRank = 'Security Analyst';
-    else if (scoreForRank >= 175) earlyRank = 'Junior Analyst';
+    if (scoreForRank >= 425)      earlyRank = 'Master Investigator';
+    else if (scoreForRank >= 355) earlyRank = 'Senior Analyst';
+    else if (scoreForRank >= 280) earlyRank = 'Security Analyst';
+    else if (scoreForRank >= 200) earlyRank = 'Junior Analyst';
     else                           earlyRank = 'Trainee';
 
     // Update decryption status with rank-aware messaging
@@ -3945,25 +3962,25 @@ function showResults() {
         }
     });
 
-    // Determine rank (max 410 pts)
+    // Determine rank (max 470 pts)
     const score = gameState.score;
     let rank, rankColor, rankIcon, rankDesc;
-    if (score >= 370) {
+    if (score >= 425) {
         rank = 'Master Investigator';
         rankColor = '#ffd700';
         rankIcon = '🏆';
         rankDesc = 'Outstanding. You identified every vulnerability and built a complete picture of the attack.';
-    } else if (score >= 310) {
+    } else if (score >= 355) {
         rank = 'Senior Analyst';
         rankColor = '#c0c0c0';
         rankIcon = '🥈';
         rankDesc = 'Strong work. You caught most of the key evidence and put together a solid response plan.';
-    } else if (score >= 245) {
+    } else if (score >= 280) {
         rank = 'Security Analyst';
         rankColor = '#cd7f32';
         rankIcon = '🥉';
         rankDesc = 'Good effort. You found the major clues but missed some details. Keep digging next time.';
-    } else if (score >= 175) {
+    } else if (score >= 200) {
         rank = 'Junior Analyst';
         rankColor = '#4a90e2';
         rankIcon = '🔍';
@@ -4015,6 +4032,10 @@ function showResults() {
             <span>${auditPoints} / 45 pts</span>
         </div>
         <div class="results-breakdown-item">
+            <span>Terminal Investigation</span>
+            <span>${gameState.terminalPoints} / 60 pts</span>
+        </div>
+        <div class="results-breakdown-item">
             <span>Timeline Reconstruction</span>
             <span>${gameState.timelineSubmitted ? gameState.timelinePoints : '0'} / 50 pts</span>
         </div>
@@ -4028,7 +4049,7 @@ function showResults() {
         </div>
         <div class="results-breakdown-item" style="border-top: 2px solid #4a90e2; margin-top: 15px; padding-top: 15px;">
             <span><strong>Total Score</strong></span>
-            <span><strong>${gameState.score} / 410 pts</strong></span>
+            <span><strong>${gameState.score} / 470 pts</strong></span>
         </div>
         ${renderTimelineReview()}
     `;

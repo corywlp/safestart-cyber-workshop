@@ -41,13 +41,14 @@ Valid credentials for groups and individual participants:
 - Post-submission timeline review shows correct vs. placed events with dates.
 - All answers are in the HTML source (single-file constraint). Light obfuscation could be added, but the workshop is designed to reward learning, not gate knowledge.
 
-## Scoring (max 410 pts)
+## Scoring (max 470 pts)
 
 | Section | Max |
 | --- | --- |
 | Email Analysis | 95 |
 | Pop Quizzes (x5, 15 pts each) | 75 |
 | User Audit | 45 |
+| Terminal Investigation (x2 key logs, 30 pts each) | 60 |
 | Timeline Reconstruction | 50 |
 | Incident Response Plan | 100 |
 | Reflection Questions | 45 |
