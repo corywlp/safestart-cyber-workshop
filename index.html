@@ -2445,47 +2445,14 @@ function initializeTerminal() {
         });
     }
 
-    // Arrow-key history navigation (like a real shell). Must use keydown
-    // because keypress doesn't fire for arrow keys.
+    // All key handling in keydown (keypress is deprecated and unreliable for Enter in modern browsers)
     input.addEventListener('keydown', function(e) {
         const history = gameState.commandHistory;
-        if (e.key === 'ArrowUp') {
-            if (history.length === 0) return;
-            e.preventDefault(); // stop the cursor from jumping to position 0
-            if (terminalHistoryIndex === -1) {
-                terminalDraftLine = input.value; // save what they were typing
-                terminalHistoryIndex = history.length - 1;
-            } else if (terminalHistoryIndex > 0) {
-                terminalHistoryIndex--;
-            }
-            input.value = history[terminalHistoryIndex];
-            // Place cursor at end of line
-            requestAnimationFrame(() => {
-                input.setSelectionRange(input.value.length, input.value.length);
-            });
-        } else if (e.key === 'ArrowDown') {
-            if (terminalHistoryIndex === -1) return;
-            e.preventDefault();
-            if (terminalHistoryIndex < history.length - 1) {
-                terminalHistoryIndex++;
-                input.value = history[terminalHistoryIndex];
-            } else {
-                // Past the most recent — restore the draft they were typing
-                terminalHistoryIndex = -1;
-                input.value = terminalDraftLine;
-                terminalDraftLine = '';
-            }
-            requestAnimationFrame(() => {
-                input.setSelectionRange(input.value.length, input.value.length);
-            });
-        }
-    });
-
-    input.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
+            e.preventDefault();
             const command = input.value;
             input.value = '';
-            terminalHistoryIndex = -1; // reset history cursor on submit
+            terminalHistoryIndex = -1;
             terminalDraftLine = '';
             executeCommand(command);
         } else if (e.key === 'c' && e.ctrlKey) {
@@ -2497,9 +2464,47 @@ function initializeTerminal() {
             input.value = '';
             output.scrollTop = output.scrollHeight;
             e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            if (history.length === 0) return;
+            e.preventDefault();
+            if (terminalHistoryIndex === -1) {
+                terminalDraftLine = input.value;
+                terminalHistoryIndex = history.length - 1;
+            } else if (terminalHistoryIndex > 0) {
+                terminalHistoryIndex--;
+            }
+            input.value = history[terminalHistoryIndex];
+            requestAnimationFrame(() => {
+                input.setSelectionRange(input.value.length, input.value.length);
+            });
+        } else if (e.key === 'ArrowDown') {
+            if (terminalHistoryIndex === -1) return;
+            e.preventDefault();
+            if (terminalHistoryIndex < history.length - 1) {
+                terminalHistoryIndex++;
+                input.value = history[terminalHistoryIndex];
+            } else {
+                terminalHistoryIndex = -1;
+                input.value = terminalDraftLine;
+                terminalDraftLine = '';
+            }
+            requestAnimationFrame(() => {
+                input.setSelectionRange(input.value.length, input.value.length);
+            });
         }
     });
     updateTerminalPrompt(); // Set initial prompt
+}
+
+function appendTerminalLine(output, html, isHTML) {
+    const span = document.createElement('span');
+    if (isHTML) {
+        span.innerHTML = html + '\n';
+    } else {
+        span.textContent = html + '\n';
+    }
+    output.appendChild(span);
+    output.scrollTop = output.scrollHeight;
 }
 
 function executeCommand(command) {
@@ -2515,12 +2520,11 @@ function executeCommand(command) {
 
     // If empty command (just Enter pressed), show prompt and return
     if (!command || command.trim() === '') {
-        output.innerHTML += `forensic@safestart:${displayPath}$ \n`;
-        output.scrollTop = output.scrollHeight;
+        appendTerminalLine(output, `forensic@safestart:${displayPath}$ `);
         return;
     }
 
-    output.innerHTML += `forensic@safestart:${displayPath}$ ${escapeHTML(command)}\n`;
+    appendTerminalLine(output, `forensic@safestart:${displayPath}$ ${escapeHTML(command)}`);
 
     // Parse command respecting quoted strings (e.g. grep "failed login" auth.log)
     const parts = [];
@@ -2582,8 +2586,10 @@ function executeCommand(command) {
             result = `Command not found: ${cmd}\nType 'help' for available commands.`;
     }
 
-    output.innerHTML += (isHTML ? result : escapeHTML(result)) + '\n\n';
-    output.scrollTop = output.scrollHeight;
+    if (result !== '') {
+        appendTerminalLine(output, isHTML ? result : escapeHTML(result), true);
+        appendTerminalLine(output, '');
+    }
     gameState.commandHistory.push(command);
 }
 
