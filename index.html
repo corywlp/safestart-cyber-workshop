@@ -2851,15 +2851,21 @@ function normalizePath(path) {
 }
 
 function resolvePath(path) {
-    // Resolve symlinks
+    // Walk each segment of the path and resolve symlinks along the way
     const normalized = normalizePath(path);
-    const entry = fileSystem[normalized];
+    const parts = normalized.split('/').filter(p => p);
+    let current = '';
 
-    if (entry && entry.type === 'symlink') {
-        return resolvePath(entry.target);
+    for (const part of parts) {
+        current += '/' + part;
+        const entry = fileSystem[current];
+        if (entry && entry.type === 'symlink') {
+            // Replace current with the symlink target and continue
+            current = entry.target.replace(/\/$/, '');
+        }
     }
 
-    return normalized;
+    return current || '/';
 }
 
 function pathExists(path) {
