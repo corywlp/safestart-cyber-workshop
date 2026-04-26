@@ -2441,8 +2441,11 @@ const fileSystem = {
 // Terminal System
 let terminalHistoryIndex = -1; // -1 means "not navigating history"
 let terminalDraftLine = '';    // What the user had typed before pressing ↑
+let terminalInitialized = false;
 
 function initializeTerminal() {
+    if (terminalInitialized) return;
+    terminalInitialized = true;
     const input = document.getElementById('terminal-input');
 
     // Click anywhere in the terminal area to focus the input (real-shell behavior)
