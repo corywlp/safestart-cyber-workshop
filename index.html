@@ -1986,6 +1986,15 @@ function initializeLogin() {
             }
         }
 
+        // Accept any @safestart.com email with password PhillyTechWeek
+        if (username.match(/^[^@]+@safestart\.com$/) && password === 'PhillyTechWeek') {
+            gameState.currentGroup = username;
+            showScreen('ransomware-screen');
+            startRansomCountdown();
+            discoverEvidence('weak-passwords');
+            return;
+        }
+
         document.getElementById('login-error').style.display = 'block';
     });
 }
