@@ -1085,8 +1085,8 @@
         </div>
         <form id="login-form">
             <div class="form-group">
-                <label for="username">Group ID</label>
-                <input type="text" id="username" placeholder="Enter group ID (e.g., group1)" required>
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter username (e.g., group1)" required>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
@@ -1660,6 +1660,44 @@ Alex`,
         feedback: {
             correct: 'Correct — legitimate internal email from IT. This explains the "DriverUpdate.exe" you may have seen elsewhere — it was approved software, not malware.',
             incorrect: 'This is a legitimate internal email from the IT coordinator. It actually clears up a potential red herring — the DriverUpdate.exe was approved DMV software.'
+        }
+    },
+    {
+        id: 'mfa-question',
+        from: 'sarah.martinez@safestartdriving.org',
+        to: 'alex.wong@safestartdriving.org',
+        date: 'March 14, 2026, 2:47 PM',
+        subject: 'RE: When are we turning on MFA?',
+        body: `Alex,
+
+OK so we're really not doing it? I just got locked out AGAIN this morning, that's twice this week. I keep telling people at our Tuesday meetings that we should at least have it on the director's account and the admin accounts. The bank makes me use a code on my phone every time I log in — why can't we?
+
+Can you put it back on the agenda for next month please? I'd rather deal with one extra step than have to keep bothering you to reset everyone's passwords.
+
+Sarah
+
+Sarah Martinez
+Office Manager
+
+-------- Original Message --------
+From: alex.wong@safestartdriving.org
+To: sarah.martinez@safestartdriving.org
+Date: March 14, 2026, 2:18 PM
+Subject: RE: When are we turning on MFA?
+
+Sarah,
+
+I hear you. Honestly, MFA has never been configured on any of our accounts — it's been on my "to do" list since I started. Jennifer asked me to look at it last fall but said the budget wasn't there for the authenticator app the vendor recommended, and we never circled back. I'll bring it up again at the next staff meeting but I can't promise anything.
+
+For now if you forget your password just ping me and I'll reset it.
+
+Alex`,
+        isPhishing: false,
+        identificationPoints: 5,
+        evidence: 'no-mfa',
+        feedback: {
+            correct: 'Correct — legitimate internal email. But this is critical evidence: IT confirms MFA has never been configured on any account. A staff member was actively asking for it and the request kept getting deferred.',
+            incorrect: 'This is a legitimate internal email — and one of the most important pieces of evidence. The IT coordinator explicitly states MFA has never been configured on any account, and the request has been repeatedly deferred.'
         }
     },
     {
@@ -2753,7 +2791,7 @@ function executeCAT(file) {
         return `cat: ${file}: No such file or directory`;
     }
 
-    // Trigger evidence discovery for specific files (+15 pts for the two narratively-key logs)
+    // Trigger evidence discovery for specific files (+30 pts for each of the three narratively-key logs)
     if (resolved === '/var/log/auth.log') {
         awardTerminalLog('foreign-ip');
         return getAuthLog();
@@ -2761,7 +2799,7 @@ function executeCAT(file) {
         awardTerminalLog('ransomware-deployed');
         return getSyslog();
     } else if (resolved === '/var/log/apache2/access.log') {
-        discoverEvidence('credentials-compromised');
+        awardTerminalLog('credentials-compromised');
         return getAccessLog();
     } else if (resolved === '/var/log/apache2/error.log') {
         return getErrorLog();
@@ -3125,23 +3163,23 @@ const suspiciousAccounts = {
 
 function initializeUserAudit() {
     const users = [
-        ['jwallace', 'Jennifer Wallace', 'Executive Director', 'Domain Admin', 'Mar 21, 4:15 PM', '185.220.101.47', '❌ Disabled'],
-        ['smartinez', 'Sarah Martinez', 'Office Manager', 'Standard User', 'Mar 21, 8:31 AM', '10.0.0.45', '❌ Disabled'],
-        ['awong', 'Alex Wong', 'IT Coordinator', 'IT Admin', 'Mar 21, 10:22 AM', '192.168.1.100', '❌ Disabled'],
-        ['rchan', 'Robert Chan', 'Instructor', 'Instructor', 'Mar 20, 3:45 PM', '192.168.2.102', '❌ Disabled'],
-        ['lthompson', 'Lisa Thompson', 'Instructor', 'Instructor', 'Mar 22, 9:30 AM', '73.185.42.100', '❌ Disabled'],
-        ['mgarcia', 'Marcus Garcia', 'Volunteer', 'Domain Admin', 'Mar 23, 11:45 PM', '185.220.101.47', '❌ Disabled'],
-        ['jlopez', 'Julia Lopez', 'Volunteer', 'Limited Access', 'Mar 18, 1:30 PM', '192.168.1.106', '❌ Disabled'],
-        ['dchen', 'David Chen', 'Instructor', 'Instructor', 'Mar 19, 2:15 PM', '192.168.2.108', '❌ Disabled'],
-        ['kpatel', 'Kavita Patel', 'Instructor', 'Instructor', 'Mar 21, 9:45 AM', '10.0.0.110', '❌ Disabled'],
-        ['bnguyen', 'Brian Nguyen', 'Volunteer', 'Limited Access', 'Mar 17, 4:20 PM', '192.168.2.112', '❌ Disabled'],
-        ['mjohnson', 'Michelle Johnson', 'Office Assistant', 'Standard User', 'Mar 20, 1:10 PM', '192.168.1.47', '❌ Disabled'],
-        ['trobinson', 'Tyler Robinson', 'Instructor', 'Instructor', 'Mar 22, 11:00 AM', '10.0.0.115', '❌ Disabled'],
-        ['akim', 'Angela Kim', 'Curriculum Coordinator', 'Standard User', 'Mar 21, 2:30 PM', '192.168.1.50', '❌ Disabled'],
-        ['jmorales', 'Jose Morales', 'Facilities Manager', 'Limited Access', 'Mar 19, 7:45 AM', '192.168.2.118', '❌ Disabled'],
-        ['staylor', 'Samantha Taylor', 'Volunteer', 'Limited Access', 'Mar 16, 3:00 PM', '192.168.1.120', '❌ Disabled'],
-        ['plee', 'Peter Lee', 'Instructor', 'Instructor', 'Mar 23, 8:15 AM', '98.207.11.22', '❌ Disabled'],
-        ['hwilson', 'Hannah Wilson', 'Outreach Coordinator', 'Standard User', 'Mar 20, 10:30 AM', '108.54.203.7', '❌ Disabled']
+        ['jwallace', 'Jennifer Wallace', 'Executive Director', 'Domain Admin', 'Mar 21, 4:15 PM', '185.220.101.47', '❌ Not Configured'],
+        ['smartinez', 'Sarah Martinez', 'Office Manager', 'Standard User', 'Mar 21, 8:31 AM', '10.0.0.45', '❌ Not Configured'],
+        ['awong', 'Alex Wong', 'IT Coordinator', 'IT Admin', 'Mar 21, 10:22 AM', '192.168.1.100', '❌ Not Configured'],
+        ['rchan', 'Robert Chan', 'Instructor', 'Instructor', 'Mar 20, 3:45 PM', '192.168.2.102', '❌ Not Configured'],
+        ['lthompson', 'Lisa Thompson', 'Instructor', 'Instructor', 'Mar 22, 9:30 AM', '73.185.42.100', '❌ Not Configured'],
+        ['mgarcia', 'Marcus Garcia', 'Volunteer', 'Domain Admin', 'Mar 23, 11:45 PM', '185.220.101.47', '❌ Not Configured'],
+        ['jlopez', 'Julia Lopez', 'Volunteer', 'Limited Access', 'Mar 18, 1:30 PM', '192.168.1.106', '❌ Not Configured'],
+        ['dchen', 'David Chen', 'Instructor', 'Instructor', 'Mar 19, 2:15 PM', '192.168.2.108', '❌ Not Configured'],
+        ['kpatel', 'Kavita Patel', 'Instructor', 'Instructor', 'Mar 21, 9:45 AM', '10.0.0.110', '❌ Not Configured'],
+        ['bnguyen', 'Brian Nguyen', 'Volunteer', 'Limited Access', 'Mar 17, 4:20 PM', '192.168.2.112', '❌ Not Configured'],
+        ['mjohnson', 'Michelle Johnson', 'Office Assistant', 'Standard User', 'Mar 20, 1:10 PM', '192.168.1.47', '❌ Not Configured'],
+        ['trobinson', 'Tyler Robinson', 'Instructor', 'Instructor', 'Mar 22, 11:00 AM', '10.0.0.115', '❌ Not Configured'],
+        ['akim', 'Angela Kim', 'Curriculum Coordinator', 'Standard User', 'Mar 21, 2:30 PM', '192.168.1.50', '❌ Not Configured'],
+        ['jmorales', 'Jose Morales', 'Facilities Manager', 'Limited Access', 'Mar 19, 7:45 AM', '192.168.2.118', '❌ Not Configured'],
+        ['staylor', 'Samantha Taylor', 'Volunteer', 'Limited Access', 'Mar 16, 3:00 PM', '192.168.1.120', '❌ Not Configured'],
+        ['plee', 'Peter Lee', 'Instructor', 'Instructor', 'Mar 23, 8:15 AM', '98.207.11.22', '❌ Not Configured'],
+        ['hwilson', 'Hannah Wilson', 'Outreach Coordinator', 'Standard User', 'Mar 20, 10:30 AM', '108.54.203.7', '❌ Not Configured']
     ];
 
     const tbody = document.getElementById('user-table-body');
@@ -3986,25 +4024,25 @@ function showResults() {
         }
     });
 
-    // Determine rank (max 470 pts)
+    // Determine rank (max 505 pts)
     const score = gameState.score;
     let rank, rankColor, rankIcon, rankDesc;
-    if (score >= 425) {
+    if (score >= 455) {
         rank = 'Master Investigator';
         rankColor = '#ffd700';
         rankIcon = '🏆';
         rankDesc = 'Outstanding. You identified every vulnerability and built a complete picture of the attack.';
-    } else if (score >= 355) {
+    } else if (score >= 380) {
         rank = 'Senior Analyst';
         rankColor = '#c0c0c0';
         rankIcon = '🥈';
         rankDesc = 'Strong work. You caught most of the key evidence and put together a solid response plan.';
-    } else if (score >= 280) {
+    } else if (score >= 300) {
         rank = 'Security Analyst';
         rankColor = '#cd7f32';
         rankIcon = '🥉';
         rankDesc = 'Good effort. You found the major clues but missed some details. Keep digging next time.';
-    } else if (score >= 200) {
+    } else if (score >= 215) {
         rank = 'Junior Analyst';
         rankColor = '#4a90e2';
         rankIcon = '🔍';
@@ -4045,7 +4083,7 @@ function showResults() {
         <h3 style="margin-top: 20px; margin-bottom: 15px; color: #b0c8e8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Score Breakdown</h3>
         <div class="results-breakdown-item">
             <span>Email Analysis</span>
-            <span>${gameState.emailPoints} / 95 pts</span>
+            <span>${gameState.emailPoints} / 100 pts</span>
         </div>
         <div class="results-breakdown-item">
             <span>Pop Quizzes</span>
@@ -4057,7 +4095,7 @@ function showResults() {
         </div>
         <div class="results-breakdown-item">
             <span>Terminal Investigation</span>
-            <span>${gameState.terminalPoints} / 60 pts</span>
+            <span>${gameState.terminalPoints} / 90 pts</span>
         </div>
         <div class="results-breakdown-item">
             <span>Timeline Reconstruction</span>
@@ -4073,7 +4111,7 @@ function showResults() {
         </div>
         <div class="results-breakdown-item" style="border-top: 2px solid #4a90e2; margin-top: 15px; padding-top: 15px;">
             <span><strong>Total Score</strong></span>
-            <span><strong>${gameState.score} / 470 pts</strong></span>
+            <span><strong>${gameState.score} / 505 pts</strong></span>
         </div>
         ${renderTimelineReview()}
     `;
