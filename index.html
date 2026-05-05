@@ -3504,16 +3504,20 @@ function initializeTimeline() {
         removeEventFromSlot(eventId);
     });
 
-    // Auto-scroll when dragging near top or bottom of viewport
-    document.addEventListener('dragover', function autoscroll(e) {
-        const threshold = 100;
-        const speed = 12;
-        if (e.clientY < threshold) {
-            window.scrollBy(0, -speed);
-        } else if (e.clientY > window.innerHeight - threshold) {
-            window.scrollBy(0, speed);
-        }
-    });
+    // Auto-scroll when dragging near top or bottom of viewport.
+    // Guarded so re-initializing the timeline doesn't stack document-level listeners.
+    if (!initializeTimeline.autoscrollAttached) {
+        initializeTimeline.autoscrollAttached = true;
+        document.addEventListener('dragover', function autoscroll(e) {
+            const threshold = 100;
+            const speed = 12;
+            if (e.clientY < threshold) {
+                window.scrollBy(0, -speed);
+            } else if (e.clientY > window.innerHeight - threshold) {
+                window.scrollBy(0, speed);
+            }
+        });
+    }
 }
 
 function createTimelineItem(event) {
@@ -3984,12 +3988,13 @@ function showResults() {
     const earnedKey = gameState.timelineCorrect && gameState.irPlanCorrect;
 
     // Compute rank early so we can use it in status messaging too
+    // Thresholds must match the badge calculation below (max 505 pts)
     const scoreForRank = gameState.score;
     let earlyRank;
-    if (scoreForRank >= 425)      earlyRank = 'Master Investigator';
-    else if (scoreForRank >= 355) earlyRank = 'Senior Analyst';
-    else if (scoreForRank >= 280) earlyRank = 'Security Analyst';
-    else if (scoreForRank >= 200) earlyRank = 'Junior Analyst';
+    if (scoreForRank >= 455)      earlyRank = 'Master Investigator';
+    else if (scoreForRank >= 380) earlyRank = 'Senior Analyst';
+    else if (scoreForRank >= 300) earlyRank = 'Security Analyst';
+    else if (scoreForRank >= 215) earlyRank = 'Junior Analyst';
     else                           earlyRank = 'Trainee';
 
     // Update decryption status with rank-aware messaging
