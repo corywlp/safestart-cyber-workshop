@@ -110,6 +110,34 @@
             display: none;
         }
 
+        .login-links {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .login-links a {
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .login-links a:hover {
+            color: #7b5cd6;
+            text-decoration: underline;
+        }
+
+        .login-links .link-note {
+            color: #888;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
         /* Ransomware Screen */
         #ransomware-screen {
             background: #000;
@@ -1095,6 +1123,10 @@
             <button type="submit" class="btn">Login</button>
             <div class="error-message" id="login-error">Invalid credentials. Please try again.</div>
         </form>
+        <div class="login-links">
+            <a href="https://canva.link/bo82t6dr0vnj5fj" target="_blank" rel="noopener noreferrer">Presentation Slides</a>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLScuI_h3hYLvYlPh_5Qd49Q0QQzNWSqQsQnLW5sTeI3OSZUqig/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">Follow-Up Survey<span class="link-note">(After Workshop and Closing Discussion)</span></a>
+        </div>
     </div>
 </div>
 
