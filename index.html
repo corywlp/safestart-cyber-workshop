@@ -2056,8 +2056,8 @@ function initializeLogin() {
             }
         }
 
-        // Accept any @safestart.com email with password PhillyTechWeek
-        if (username.match(/^[^@]+@safestart\.com$/) && password === 'PhillyTechWeek') {
+        // Accept any @safestart.com or @safestart.org email with password PhillyTechWeek
+        if (username.match(/^[^@]+@safestart\.(com|org)$/) && password === 'PhillyTechWeek') {
             gameState.currentGroup = username;
             showScreen('ransomware-screen');
             startRansomCountdown();
