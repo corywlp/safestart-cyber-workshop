@@ -138,6 +138,45 @@
             margin-left: 4px;
         }
 
+        .login-credentials {
+            margin-top: 4px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            text-align: left;
+        }
+
+        .login-credentials-label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+
+        .login-credentials-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            padding: 3px 0;
+        }
+
+        .login-credentials-row span {
+            color: #aaa;
+        }
+
+        .login-credentials-row code {
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
         /* Ransomware Screen */
         #ransomware-screen {
             background: #000;
@@ -1125,7 +1164,11 @@
         </form>
         <div class="login-links">
             <a href="https://canva.link/bo82t6dr0vnj5fj" target="_blank" rel="noopener noreferrer">Presentation Slides</a>
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLScuI_h3hYLvYlPh_5Qd49Q0QQzNWSqQsQnLW5sTeI3OSZUqig/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">Follow-Up Survey<span class="link-note">(After Workshop and Closing Discussion)</span></a>
+            <div class="login-credentials">
+                <div class="login-credentials-label">Login credentials</div>
+                <div class="login-credentials-row"><span>Username</span><code>Yourname@safestart.org</code></div>
+                <div class="login-credentials-row"><span>Password</span><code>PhillyTechWeek</code></div>
+            </div>
         </div>
     </div>
 </div>
