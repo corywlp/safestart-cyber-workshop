@@ -127,6 +127,7 @@
   .mono { font-family: 'Courier New', monospace; color: var(--accent); }
   code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); border: 1px solid var(--border2); }
   .findings-tracker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .print-mirror { display: none; }
   .finding-item { background: var(--bg3); border-radius: 6px; padding: 10px 12px; font-size: 12px; border-left: 3px solid var(--border2); transition: border-color 0.3s; }
   .finding-item.found { border-left-color: var(--green); box-shadow: -2px 0 8px rgba(0,255,136,0.2); }
   .finding-item .fi-label { color: var(--text-dim); }
@@ -176,7 +177,8 @@
     #page0, #page1, #page2, #page3, #page4, #page7, #page8, #page9 { display: none !important; }
     #page5, #page6 { display: block !important; }
     .no-print { display: none !important; }
-    textarea.report-field { border:1px solid #ccc; background:#fff; color:#000; font-family: Georgia, serif; font-size:12px; height:auto; min-height:0; overflow:visible; resize:none; }
+    textarea.report-field { display: none !important; }
+    .print-mirror { display: block !important; border:1px solid #ccc; background:#fff; color:#000; font-family: Georgia, serif; font-size:12px; white-space:pre-wrap; word-break:break-word; padding:8px; min-height:20px; width:100%; box-sizing:border-box; }
     input.report-field, select.report-field { border:none; border-bottom:1px solid #ccc; background:#fff; color:#000; font-size:13px; }
     body { background:#fff; color:#000; }
     .card { background:#fff; border:none; border-bottom:1px solid #eee; border-radius:0; padding:16px 0; margin-bottom:0; }
@@ -803,7 +805,7 @@ failed_attempts = {}
 
     <div style="text-align:center; margin-top:20px; padding-top:20px; border-top:1px solid #30363d;">
       <p style="color:#a8b8d0; font-size:13px; margin-bottom:14px;">When your report is complete, save it as a PDF using your browser's print function.</p>
-      <button class="btn btn-primary" style="font-size:14px; padding:10px 28px;" onclick="printReport()">Export to PDF (Print)</button>
+      <button class="btn btn-primary" style="font-size:14px; padding:10px 28px;" onclick="window.print()">Export to PDF (Print)</button>
     </div>
   </div>
 
@@ -2357,6 +2359,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initSiem();
   autoRestore();   // restore fields first
   jordanOpen();    // then init Jordan (reads restored fields if any)
+  createPrintMirrors();
+  setTimeout(syncPrintMirrors, 800); // sync after prefill script runs
   // populate PDF cover from report fields on print
   window.addEventListener('beforeprint', () => {
     document.getElementById('cv-analyst').textContent = document.getElementById('rpt-analyst').value || '(not filled)';
@@ -2385,28 +2389,22 @@ Type 'help' for a list of available commands.
 </span></div>`;
 });
 
-function printReport() {
+function createPrintMirrors() {
   document.querySelectorAll('textarea.report-field').forEach(function(ta) {
-    const div = document.createElement('div');
-    div.className = 'report-field print-div';
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.wordBreak = 'break-word';
-    div.style.minHeight = '20px';
-    div.textContent = ta.value;
-    ta.parentNode.insertBefore(div, ta);
-    ta.style.display = 'none';
+    const mirror = document.createElement('div');
+    mirror.className = 'print-mirror';
+    mirror.textContent = ta.value;
+    ta.parentNode.insertBefore(mirror, ta.nextSibling);
+    ta.addEventListener('input', function() { mirror.textContent = ta.value; });
+    ta._mirror = mirror;
   });
-  window.print();
 }
 
-window.addEventListener('afterprint', function() {
-  document.querySelectorAll('div.print-div').forEach(function(div) {
-    div.parentNode.removeChild(div);
-  });
+function syncPrintMirrors() {
   document.querySelectorAll('textarea.report-field').forEach(function(ta) {
-    ta.style.display = '';
+    if(ta._mirror) ta._mirror.textContent = ta.value;
   });
-});
+}
 </script>
 </body>
 </html>
