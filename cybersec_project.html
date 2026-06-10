@@ -173,8 +173,8 @@
     #pdf-cover .cover-meta-row .value { color:#1a1a2e; font-weight:bold; }
     #pdf-cover .cover-footer { margin-top:60px; font-size:11px; color:#aaa; }
     .page { display: block !important; }
-    #page0, #page1, #page2, #page3, #page4, #page5, #page7, #page8, #page9 { display: none !important; }
-    #page6 { display: block !important; }
+    #page0, #page1, #page2, #page3, #page4, #page7, #page8, #page9 { display: none !important; }
+    #page5, #page6 { display: block !important; }
     .no-print { display: none !important; }
     textarea.report-field { border:1px solid #ccc; background:#fff; color:#000; font-family: Georgia, serif; font-size:12px; height:auto; min-height:0; overflow:visible; resize:none; }
     input.report-field, select.report-field { border:none; border-bottom:1px solid #ccc; background:#fff; color:#000; font-size:13px; }
@@ -2198,7 +2198,7 @@ async function saveMyWork() {
   fieldIds.forEach(id => {
     const el = document.getElementById(id);
     if(el) {
-      const v = el.value.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      const v = el.value.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$').replace(/<\/script>/gi,'<\\/script>');
       if(el.tagName === 'SELECT') {
         prefillScript += `  var s = document.getElementById(${JSON.stringify(id)}); if(s) s.value = \`${v}\`;\n`;
       } else {
