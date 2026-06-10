@@ -803,7 +803,7 @@ failed_attempts = {}
 
     <div style="text-align:center; margin-top:20px; padding-top:20px; border-top:1px solid #30363d;">
       <p style="color:#a8b8d0; font-size:13px; margin-bottom:14px;">When your report is complete, save it as a PDF using your browser's print function.</p>
-      <button class="btn btn-primary" style="font-size:14px; padding:10px 28px;" onclick="window.print()">Export to PDF (Print)</button>
+      <button class="btn btn-primary" style="font-size:14px; padding:10px 28px;" onclick="printReport()">Export to PDF (Print)</button>
     </div>
   </div>
 
@@ -2385,27 +2385,25 @@ Type 'help' for a list of available commands.
 </span></div>`;
 });
 
-window.addEventListener('beforeprint', function() {
+function printReport() {
+  const swaps = [];
   document.querySelectorAll('textarea.report-field').forEach(function(ta) {
     const div = document.createElement('div');
     div.className = 'report-field';
     div.style.whiteSpace = 'pre-wrap';
     div.style.wordBreak = 'break-word';
+    div.style.minHeight = '20px';
     div.textContent = ta.value;
     ta.parentNode.insertBefore(div, ta);
     ta.style.display = 'none';
-    ta._printDiv = div;
+    swaps.push({ta: ta, div: div});
   });
-});
-window.addEventListener('afterprint', function() {
-  document.querySelectorAll('textarea.report-field').forEach(function(ta) {
-    if(ta._printDiv) {
-      ta._printDiv.parentNode.removeChild(ta._printDiv);
-      ta._printDiv = null;
-    }
-    ta.style.display = '';
+  window.print();
+  swaps.forEach(function(s) {
+    s.div.parentNode.removeChild(s.div);
+    s.ta.style.display = '';
   });
-});
+}
 </script>
 </body>
 </html>
