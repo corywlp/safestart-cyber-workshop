@@ -2386,24 +2386,27 @@ Type 'help' for a list of available commands.
 });
 
 function printReport() {
-  const swaps = [];
   document.querySelectorAll('textarea.report-field').forEach(function(ta) {
     const div = document.createElement('div');
-    div.className = 'report-field';
+    div.className = 'report-field print-div';
     div.style.whiteSpace = 'pre-wrap';
     div.style.wordBreak = 'break-word';
     div.style.minHeight = '20px';
     div.textContent = ta.value;
     ta.parentNode.insertBefore(div, ta);
     ta.style.display = 'none';
-    swaps.push({ta: ta, div: div});
   });
   window.print();
-  swaps.forEach(function(s) {
-    s.div.parentNode.removeChild(s.div);
-    s.ta.style.display = '';
-  });
 }
+
+window.addEventListener('afterprint', function() {
+  document.querySelectorAll('div.print-div').forEach(function(div) {
+    div.parentNode.removeChild(div);
+  });
+  document.querySelectorAll('textarea.report-field').forEach(function(ta) {
+    ta.style.display = '';
+  });
+});
 </script>
 </body>
 </html>
