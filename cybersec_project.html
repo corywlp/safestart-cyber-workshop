@@ -2387,14 +2387,23 @@ Type 'help' for a list of available commands.
 
 window.addEventListener('beforeprint', function() {
   document.querySelectorAll('textarea.report-field').forEach(function(ta) {
-    ta.style.height = ta.scrollHeight + 'px';
-    ta.style.overflow = 'visible';
+    const div = document.createElement('div');
+    div.className = 'report-field';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordBreak = 'break-word';
+    div.textContent = ta.value;
+    ta.parentNode.insertBefore(div, ta);
+    ta.style.display = 'none';
+    ta._printDiv = div;
   });
 });
 window.addEventListener('afterprint', function() {
   document.querySelectorAll('textarea.report-field').forEach(function(ta) {
-    ta.style.height = '';
-    ta.style.overflow = '';
+    if(ta._printDiv) {
+      ta._printDiv.parentNode.removeChild(ta._printDiv);
+      ta._printDiv = null;
+    }
+    ta.style.display = '';
   });
 });
 </script>
